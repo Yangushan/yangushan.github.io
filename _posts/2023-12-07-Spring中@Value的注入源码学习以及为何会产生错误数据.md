@@ -603,11 +603,11 @@ protected Object doCreateBean(String beanName, RootBeanDefinition mbd, @Nullable
 }
 ```
 
-![图1](https://github.com/Yangushan/yangushan.github.io/blob/d7ea7ff8ded30c18450acc5ff6ae1e512ce9fd62/assets/images/%E5%85%B3%E4%BA%8E%E4%B8%80%E6%AC%A1Spring%E4%B8%AD%E7%9A%84@Value%E6%B3%A8%E8%A7%A3%E8%A7%A3%E6%9E%90%E8%BF%94%E5%9B%9E%E4%B8%8D%E6%AD%A3%E7%A1%AE%E7%9A%84%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5%EF%BC%8C%E4%BB%A5%E5%8F%8A%E6%9F%A5%E7%9C%8BSpring%E6%BA%90%E7%A0%81%E4%BA%86%E8%A7%A3@Value%E7%9A%84%E6%B3%A8%E5%85%A5%E6%B5%81%E7%A8%8B/%E5%9B%BE1.png?raw=true)*图1*
+![图1]({{"/assets/images/关于一次Spring中的@Value注解解析返回不正确的问题排查，以及查看Spring源码了解@Value的注入流程/图1.png" | absolute_url }})*图1*
 
 进入org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory#populateBean，由于这个方法也很长，所以我们依然使用上面一个方法来观察bean对象里面的Field是否被注入来判断到底是哪个方法调用中初始化了我们的field字段，慢慢调用之后排查到了InstantiationAwareBeanPostProcessor对象在其中一次执行的时候，field被初始化了，由于这个是一个for循环，所以我们还需要在for循环中具体观察是哪一次循环被初始化了，这里有一个特别说明，很多人在这个类中找不到bean对象，放在bw的rootObject里面，可以查看下图
 
-![图2](https://github.com/Yangushan/yangushan.github.io/blob/d7ea7ff8ded30c18450acc5ff6ae1e512ce9fd62/assets/images/%E5%85%B3%E4%BA%8E%E4%B8%80%E6%AC%A1Spring%E4%B8%AD%E7%9A%84@Value%E6%B3%A8%E8%A7%A3%E8%A7%A3%E6%9E%90%E8%BF%94%E5%9B%9E%E4%B8%8D%E6%AD%A3%E7%A1%AE%E7%9A%84%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5%EF%BC%8C%E4%BB%A5%E5%8F%8A%E6%9F%A5%E7%9C%8BSpring%E6%BA%90%E7%A0%81%E4%BA%86%E8%A7%A3@Value%E7%9A%84%E6%B3%A8%E5%85%A5%E6%B5%81%E7%A8%8B/%E5%9B%BE2.png?raw=true)*图2*
+![图2]({{"/assets/images/关于一次Spring中的@Value注解解析返回不正确的问题排查，以及查看Spring源码了解@Value的注入流程/图2.png" | absolute_url }})*图2*
 
 ```java
 protected void populateBean(String beanName, RootBeanDefinition mbd, @Nullable BeanWrapper bw) {
@@ -694,13 +694,13 @@ protected void populateBean(String beanName, RootBeanDefinition mbd, @Nullable B
 
 for循环中出现了以下几个
 
-![图3](https://github.com/Yangushan/yangushan.github.io/blob/d7ea7ff8ded30c18450acc5ff6ae1e512ce9fd62/assets/images/%E5%85%B3%E4%BA%8E%E4%B8%80%E6%AC%A1Spring%E4%B8%AD%E7%9A%84@Value%E6%B3%A8%E8%A7%A3%E8%A7%A3%E6%9E%90%E8%BF%94%E5%9B%9E%E4%B8%8D%E6%AD%A3%E7%A1%AE%E7%9A%84%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5%EF%BC%8C%E4%BB%A5%E5%8F%8A%E6%9F%A5%E7%9C%8BSpring%E6%BA%90%E7%A0%81%E4%BA%86%E8%A7%A3@Value%E7%9A%84%E6%B3%A8%E5%85%A5%E6%B5%81%E7%A8%8B/%E5%9B%BE3.png?raw=true)*图3*
+![图3]({{"/assets/images/关于一次Spring中的@Value注解解析返回不正确的问题排查，以及查看Spring源码了解@Value的注入流程/图3.png" | absolute_url }})*图3*
 
-![图4](https://github.com/Yangushan/yangushan.github.io/blob/d7ea7ff8ded30c18450acc5ff6ae1e512ce9fd62/assets/images/%E5%85%B3%E4%BA%8E%E4%B8%80%E6%AC%A1Spring%E4%B8%AD%E7%9A%84@Value%E6%B3%A8%E8%A7%A3%E8%A7%A3%E6%9E%90%E8%BF%94%E5%9B%9E%E4%B8%8D%E6%AD%A3%E7%A1%AE%E7%9A%84%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5%EF%BC%8C%E4%BB%A5%E5%8F%8A%E6%9F%A5%E7%9C%8BSpring%E6%BA%90%E7%A0%81%E4%BA%86%E8%A7%A3@Value%E7%9A%84%E6%B3%A8%E5%85%A5%E6%B5%81%E7%A8%8B/%E5%9B%BE4.png?raw=true)*图4*
+![图4]({{"/assets/images/关于一次Spring中的@Value注解解析返回不正确的问题排查，以及查看Spring源码了解@Value的注入流程/图4.png" | absolute_url }})*图4*
 
-![图5](https://github.com/Yangushan/yangushan.github.io/blob/d7ea7ff8ded30c18450acc5ff6ae1e512ce9fd62/assets/images/%E5%85%B3%E4%BA%8E%E4%B8%80%E6%AC%A1Spring%E4%B8%AD%E7%9A%84@Value%E6%B3%A8%E8%A7%A3%E8%A7%A3%E6%9E%90%E8%BF%94%E5%9B%9E%E4%B8%8D%E6%AD%A3%E7%A1%AE%E7%9A%84%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5%EF%BC%8C%E4%BB%A5%E5%8F%8A%E6%9F%A5%E7%9C%8BSpring%E6%BA%90%E7%A0%81%E4%BA%86%E8%A7%A3@Value%E7%9A%84%E6%B3%A8%E5%85%A5%E6%B5%81%E7%A8%8B/%E5%9B%BE5.png?raw=true)*图5*
+![图5]({{"/assets/images/关于一次Spring中的@Value注解解析返回不正确的问题排查，以及查看Spring源码了解@Value的注入流程/图5.png" | absolute_url }})*图5*
 
-![图6](https://github.com/Yangushan/yangushan.github.io/blob/d7ea7ff8ded30c18450acc5ff6ae1e512ce9fd62/assets/images/%E5%85%B3%E4%BA%8E%E4%B8%80%E6%AC%A1Spring%E4%B8%AD%E7%9A%84@Value%E6%B3%A8%E8%A7%A3%E8%A7%A3%E6%9E%90%E8%BF%94%E5%9B%9E%E4%B8%8D%E6%AD%A3%E7%A1%AE%E7%9A%84%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5%EF%BC%8C%E4%BB%A5%E5%8F%8A%E6%9F%A5%E7%9C%8BSpring%E6%BA%90%E7%A0%81%E4%BA%86%E8%A7%A3@Value%E7%9A%84%E6%B3%A8%E5%85%A5%E6%B5%81%E7%A8%8B/%E5%9B%BE6.png?raw=true)*图6*
+![图6]({{"/assets/images/关于一次Spring中的@Value注解解析返回不正确的问题排查，以及查看Spring源码了解@Value的注入流程/图6.png" | absolute_url }})*图6*
 
 注意，当出现MyAutowired的时候，执行`postProcessPropertyValues方法`，这个时候再去观察bean，已经被执行了，所以我们可以知道是MyAutowired的这个方法初始化了我们的field，我们进入MyAutowired的这个方法`postProcessPropertyValues`方法com.fangyou.v2.repo.config.MyAutowired#postProcessPropertyValues
 
@@ -745,7 +745,7 @@ public void inject(Object target, @Nullable String beanName, @Nullable PropertyV
 
 在这里我们断点发现elementsToInterate这个会找到你bean中所有需要处理的field，进行循环单独处理，查看下图，由于我们不关心其他正确的field,我们只关心我们的那个field，所以循环到我们关心的field，进行element.inject方法查看
 
-![图7](https://github.com/Yangushan/yangushan.github.io/blob/d7ea7ff8ded30c18450acc5ff6ae1e512ce9fd62/assets/images/%E5%85%B3%E4%BA%8E%E4%B8%80%E6%AC%A1Spring%E4%B8%AD%E7%9A%84@Value%E6%B3%A8%E8%A7%A3%E8%A7%A3%E6%9E%90%E8%BF%94%E5%9B%9E%E4%B8%8D%E6%AD%A3%E7%A1%AE%E7%9A%84%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5%EF%BC%8C%E4%BB%A5%E5%8F%8A%E6%9F%A5%E7%9C%8BSpring%E6%BA%90%E7%A0%81%E4%BA%86%E8%A7%A3@Value%E7%9A%84%E6%B3%A8%E5%85%A5%E6%B5%81%E7%A8%8B/%E5%9B%BE7.png?raw=true)*图7*
+![图7]({{"/assets/images/关于一次Spring中的@Value注解解析返回不正确的问题排查，以及查看Spring源码了解@Value的注入流程/图7.png" | absolute_url }})*图7*
 
 进入com.fangyou.v2.repo.config.MyAutowired.AutowiredFieldElement#inject，还是使用上面的一步步调用法则，最后发现在beanFactory.resolveDependency，value是解析错误的那个值，那就是这个方法了，所以进入该方法
 
@@ -950,7 +950,7 @@ public String resolveEmbeddedValue(@Nullable String value) {
 
 往下走，发现这个Resolver是一个函数对象，跳转到了org.springframework.context.support.PropertySourcesPlaceholderConfigurer#processProperties(org.springframework.beans.factory.config.ConfigurableListableBeanFactory, org.springframework.core.env.ConfigurablePropertyResolver)里面去执行，那我们继续往下走，进入了org.springframework.core.env.AbstractPropertyResolver#resolveRequiredPlaceholders方法
 
-![图8](https://github.com/Yangushan/yangushan.github.io/blob/d7ea7ff8ded30c18450acc5ff6ae1e512ce9fd62/assets/images/%E5%85%B3%E4%BA%8E%E4%B8%80%E6%AC%A1Spring%E4%B8%AD%E7%9A%84@Value%E6%B3%A8%E8%A7%A3%E8%A7%A3%E6%9E%90%E8%BF%94%E5%9B%9E%E4%B8%8D%E6%AD%A3%E7%A1%AE%E7%9A%84%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5%EF%BC%8C%E4%BB%A5%E5%8F%8A%E6%9F%A5%E7%9C%8BSpring%E6%BA%90%E7%A0%81%E4%BA%86%E8%A7%A3@Value%E7%9A%84%E6%B3%A8%E5%85%A5%E6%B5%81%E7%A8%8B/%E5%9B%BE8.png?raw=true)*图8*
+![图8]({{"/assets/images/关于一次Spring中的@Value注解解析返回不正确的问题排查，以及查看Spring源码了解@Value的注入流程/图8.png" | absolute_url }})*图8*
 
 ```java
 @Override
@@ -1033,7 +1033,7 @@ protected String parseStringValue(
 
 走到了org.springframework.core.env.PropertySourcesPropertyResolver#getProperty(java.lang.String, java.lang.Class<T>, boolean)方法，发现是从propertySources里面循环遍历，如果拿到value，则直接返回，所以这个propertySources的顺序很重要，看下面截图，在第一个environment就拿到了，所以进入environment里面进行查看
 
-![图9](https://github.com/Yangushan/yangushan.github.io/blob/d7ea7ff8ded30c18450acc5ff6ae1e512ce9fd62/assets/images/%E5%85%B3%E4%BA%8E%E4%B8%80%E6%AC%A1Spring%E4%B8%AD%E7%9A%84@Value%E6%B3%A8%E8%A7%A3%E8%A7%A3%E6%9E%90%E8%BF%94%E5%9B%9E%E4%B8%8D%E6%AD%A3%E7%A1%AE%E7%9A%84%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5%EF%BC%8C%E4%BB%A5%E5%8F%8A%E6%9F%A5%E7%9C%8BSpring%E6%BA%90%E7%A0%81%E4%BA%86%E8%A7%A3@Value%E7%9A%84%E6%B3%A8%E5%85%A5%E6%B5%81%E7%A8%8B/%E5%9B%BE9.png?raw=true)*图9*
+![图9]({{"/assets/images/关于一次Spring中的@Value注解解析返回不正确的问题排查，以及查看Spring源码了解@Value的注入流程/图9.png" | absolute_url }})*图9*
 
 ```java
 @Nullable
@@ -1091,7 +1091,7 @@ protected <T> T getProperty(String key, Class<T> targetValueType, boolean resolv
 
 **看下面的代码也是和上面一层有点像，也是通过遍历，如果先拿到则直接返回，所以这个This.propertySources里面的顺序就很重要，我们可以从这里看到，configurationProperties的顺序是最重要的，接下来是以此判断servletConfigInitParams, servletContextInitParams, systemProperties, systemEnvironment, random，等等，后面才是我们的application.yml，所以系统的配置优先级高于本地配置，这是第一点，那么接下来由于我们是environment里面的逻辑不熟悉，所以我们可以循环到environment这里，进行查看，为什么会把_解析为.**
 
-![图10](https://github.com/Yangushan/yangushan.github.io/blob/d7ea7ff8ded30c18450acc5ff6ae1e512ce9fd62/assets/images/%E5%85%B3%E4%BA%8E%E4%B8%80%E6%AC%A1Spring%E4%B8%AD%E7%9A%84@Value%E6%B3%A8%E8%A7%A3%E8%A7%A3%E6%9E%90%E8%BF%94%E5%9B%9E%E4%B8%8D%E6%AD%A3%E7%A1%AE%E7%9A%84%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5%EF%BC%8C%E4%BB%A5%E5%8F%8A%E6%9F%A5%E7%9C%8BSpring%E6%BA%90%E7%A0%81%E4%BA%86%E8%A7%A3@Value%E7%9A%84%E6%B3%A8%E5%85%A5%E6%B5%81%E7%A8%8B/%E5%9B%BE10.png?raw=true)*图10*
+![图10]({{"/assets/images/关于一次Spring中的@Value注解解析返回不正确的问题排查，以及查看Spring源码了解@Value的注入流程/图10.png" | absolute_url }})*图10*
 
 进入代码org.springframework.core.env.SystemEnvironmentPropertySource#getProperty，这个方法，我们看到会把我们的name转化为actualName，然后我们的trade.h5AppId就已经变为了trade_h5AppId，那么问题就在这个resolvePropertyName里面了
 
@@ -1108,7 +1108,7 @@ public Object getProperty(String name) {
 }
 ```
 
-![图11](https://github.com/Yangushan/yangushan.github.io/blob/d7ea7ff8ded30c18450acc5ff6ae1e512ce9fd62/assets/images/%E5%85%B3%E4%BA%8E%E4%B8%80%E6%AC%A1Spring%E4%B8%AD%E7%9A%84@Value%E6%B3%A8%E8%A7%A3%E8%A7%A3%E6%9E%90%E8%BF%94%E5%9B%9E%E4%B8%8D%E6%AD%A3%E7%A1%AE%E7%9A%84%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5%EF%BC%8C%E4%BB%A5%E5%8F%8A%E6%9F%A5%E7%9C%8BSpring%E6%BA%90%E7%A0%81%E4%BA%86%E8%A7%A3@Value%E7%9A%84%E6%B3%A8%E5%85%A5%E6%B5%81%E7%A8%8B/%E5%9B%BE11.png?raw=true)*图11*
+![图11]({{"/assets/images/关于一次Spring中的@Value注解解析返回不正确的问题排查，以及查看Spring源码了解@Value的注入流程/图11.png" | absolute_url }})*图11*
 
 ```java
 protected final String resolvePropertyName(String name) {
