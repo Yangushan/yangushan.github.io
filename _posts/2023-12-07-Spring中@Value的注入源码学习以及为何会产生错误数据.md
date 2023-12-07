@@ -1,11 +1,13 @@
 ---
-title: 关于一次Spring中的@Value注解解析返回不正确的问题排查，以及查看Spring源码了解@Value的注入流程
+title: Spring中@Value的注入源码学习以及为何会产生错误数据
 date: 2023-12-07 15:31
 categories: [源码学习]
 tags: [java, spring, 源码学习]
 pin: false
 image: /assets/images/关于一次Spring中的@Value注解解析返回不正确的问题排查，以及查看Spring源码了解@Value的注入流程/cover.jpeg
 ---
+
+> 这是关于一次Spring中的@Value注解解析返回不正确的问题排查，以及查看Spring源码了解@Value的注入流程
 
 ## 问题的发生
 
