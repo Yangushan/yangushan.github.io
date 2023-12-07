@@ -79,7 +79,7 @@ avatar: /images/WechatIMG104.jpeg
 toc: true
 
 comments:
-  active: # The global switch for posts comments, e.g., 'disqus'.  Keep it empty means disable
+  active: giscus
   # The active options are as follows:
   disqus:
     shortname: # fill with the Disqus shortname. › https://help.disqus.com/en/articles/1717111-what-s-a-shortname
@@ -91,12 +91,12 @@ comments:
   giscus:
     repo: Yangushan/yangushan.github.io
     repo_id: R_kgDOK2unNg
-    category: Q&A
-    category_id: DIC_kwDOK2unNs4Cbj4m
+    category: Announcements
+    category_id: DIC_kwDOK2unNs4Cbj4k
     mapping: pathname
     input_position: bottom
     lang: # optional, default to the value of `site.lang`
-    reactions_enabled: # optional, default to the value of `1`
+    reactions_enabled: 1
 
 # Self-hosted static assets, optional › https://github.com/cotes2020/chirpy-static-assets
 assets:
