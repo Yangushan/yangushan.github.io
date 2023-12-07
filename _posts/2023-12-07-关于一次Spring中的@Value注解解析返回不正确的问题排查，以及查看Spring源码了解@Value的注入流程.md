@@ -498,7 +498,7 @@ protected Object createBean(String beanName, RootBeanDefinition mbd, @Nullable O
 }
 ```
 
-<font color=#FF000>**进入org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory#doCreateBean，这个方法观察，在创建bean之后进行一系列对bean的初始化之后返回这个bean，所以我们的注入肯定是在这个方法中的某个调用方法实现的，我们可以通过一步步断点调用来查看bean这个对象的field是否被注入，如果前面一步没有，后面一步有了，就可以定位到是在哪个方法被注入了，我们通过排查，最后定位到了是在populateBean方法，会去初始化bean的field**</font>
+**进入org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory#doCreateBean，这个方法观察，在创建bean之后进行一系列对bean的初始化之后返回这个bean，所以我们的注入肯定是在这个方法中的某个调用方法实现的，我们可以通过一步步断点调用来查看bean这个对象的field是否被注入，如果前面一步没有，后面一步有了，就可以定位到是在哪个方法被注入了，我们通过排查，最后定位到了是在populateBean方法，会去初始化bean的field**
 
 ```java
 protected Object doCreateBean(String beanName, RootBeanDefinition mbd, @Nullable Object[] args)
@@ -1087,7 +1087,7 @@ protected <T> T getProperty(String key, Class<T> targetValueType, boolean resolv
 }
 ```
 
-<font color=#FF000 >**看下面的代码也是和上面一层有点像，也是通过遍历，如果先拿到则直接返回，所以这个This.propertySources里面的顺序就很重要，我们可以从这里看到，configurationProperties的顺序是最重要的，接下来是以此判断servletConfigInitParams, servletContextInitParams, systemProperties, systemEnvironment, random，等等，后面才是我们的application.yml，所以系统的配置优先级高于本地配置，这是第一点，那么接下来由于我们是environment里面的逻辑不熟悉，所以我们可以循环到environment这里，进行查看，为什么会把_解析为.**</font>
+**看下面的代码也是和上面一层有点像，也是通过遍历，如果先拿到则直接返回，所以这个This.propertySources里面的顺序就很重要，我们可以从这里看到，configurationProperties的顺序是最重要的，接下来是以此判断servletConfigInitParams, servletContextInitParams, systemProperties, systemEnvironment, random，等等，后面才是我们的application.yml，所以系统的配置优先级高于本地配置，这是第一点，那么接下来由于我们是environment里面的逻辑不熟悉，所以我们可以循环到environment这里，进行查看，为什么会把_解析为.**
 
 ![图10](https://github.com/Yangushan/yangushan.github.io/blob/d7ea7ff8ded30c18450acc5ff6ae1e512ce9fd62/assets/images/%E5%85%B3%E4%BA%8E%E4%B8%80%E6%AC%A1Spring%E4%B8%AD%E7%9A%84@Value%E6%B3%A8%E8%A7%A3%E8%A7%A3%E6%9E%90%E8%BF%94%E5%9B%9E%E4%B8%8D%E6%AD%A3%E7%A1%AE%E7%9A%84%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5%EF%BC%8C%E4%BB%A5%E5%8F%8A%E6%9F%A5%E7%9C%8BSpring%E6%BA%90%E7%A0%81%E4%BA%86%E8%A7%A3@Value%E7%9A%84%E6%B3%A8%E5%85%A5%E6%B5%81%E7%A8%8B/%E5%9B%BE10.png?raw=true)*图10*
 
