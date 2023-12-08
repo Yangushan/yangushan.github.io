@@ -298,6 +298,7 @@ protected <T> T doGetBean(
         // 获取单例对象
         sharedInstance = getSingleton(beanName, () -> {
           try {
+            // 函数式编程，最后又会调用这个方法来创建对象
             return createBean(beanName, mbd, args);
           }
           catch (BeansException ex) {
@@ -481,7 +482,7 @@ protected Object createBean(String beanName, RootBeanDefinition mbd, @Nullable O
   }
 
   try {
-    // 创建bean对象，所以这里我们在调试的时候，可以设置beanName为我们需要的那个bean，不然启动要初始化好多bean，不好排查问题
+    // 创建bean对象，所以这里我们在调试的时候，在断点处可以设置beanName为我们需要的那个bean，不然启动要初始化好多bean，不好排查问题
     Object beanInstance = doCreateBean(beanName, mbdToUse, args);
     if (logger.isTraceEnabled()) {
       logger.trace("Finished creating instance of bean '" + beanName + "'");
@@ -664,12 +665,12 @@ protected void populateBean(String beanName, RootBeanDefinition mbd, @Nullable B
       if (bp instanceof InstantiationAwareBeanPostProcessor) {
         // 在这个for循环中，其中一次实力话了bean的field
         InstantiationAwareBeanPostProcessor ibp = (InstantiationAwareBeanPostProcessor) bp;
+        // 观察发现是AutowiredAnnotationBeanPostProcessor调用这个方法的时候初始化field
         PropertyValues pvsToUse = ibp.postProcessProperties(pvs, bw.getWrappedInstance(), beanName);
         if (pvsToUse == null) {
           if (filteredPds == null) {
             filteredPds = filterPropertyDescriptorsForDependencyCheck(bw, mbd.allowCaching);
           }
-          // 观察发现是在MyAutowired调用这个方法的时候初始化field
           pvsToUse = ibp.postProcessPropertyValues(pvs, filteredPds, bw.getWrappedInstance(), beanName);
           if (pvsToUse == null) {
             return;
@@ -702,25 +703,23 @@ for循环中出现了以下几个
 
 ![图6]({{"/assets/images/关于一次Spring中的@Value注解解析返回不正确的问题排查，以及查看Spring源码了解@Value的注入流程/图6.png" | absolute_url }})*图6*
 
-注意，当出现MyAutowired的时候，执行`postProcessPropertyValues方法`，这个时候再去观察bean，已经被执行了，所以我们可以知道是MyAutowired的这个方法初始化了我们的field，我们进入MyAutowired的这个方法`postProcessPropertyValues`方法com.fangyou.v2.repo.config.MyAutowired#postProcessPropertyValues
+注意，当出现AutowiredAnnotationBeanPostProcessor的时候，执行`postProcessProperties`方法，这个时候再去观察bean，已经被执行了，所以我们可以知道是AutowiredAnnotationBeanPostProcessor的这个方法初始化了我们的field，我们进入AutowiredAnnotationBeanPostProcessor的这个方法`postProcessProperties`方法org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor#postProcessProperties
 
 ```java
 @Override
-public PropertyValues postProcessPropertyValues(
-        PropertyValues pvs, PropertyDescriptor[] pds, Object bean, String beanName) throws BeanCreationException {
-
-    InjectionMetadata metadata = findAutowiringMetadata(beanName, bean.getClass(), pvs);
-    try {
-        // MyAutowired在这个方法中初始化了Field
-        metadata.inject(bean, beanName, pvs);
-    }
-    catch (BeanCreationException ex) {
-        throw ex;
-    }
-    catch (Throwable ex) {
-        throw new BeanCreationException(beanName, "Injection of autowired dependencies failed", ex);
-    }
-    return pvs;
+public PropertyValues postProcessProperties(PropertyValues pvs, Object bean, String beanName) {
+  InjectionMetadata metadata = findAutowiringMetadata(beanName, bean.getClass(), pvs);
+  try {
+    // 在这里初始化了field
+    metadata.inject(bean, beanName, pvs);
+  }
+  catch (BeanCreationException ex) {
+    throw ex;
+  }
+  catch (Throwable ex) {
+    throw new BeanCreationException(beanName, "Injection of autowired dependencies failed", ex);
+  }
+  return pvs;
 }
 ```
 
@@ -747,55 +746,54 @@ public void inject(Object target, @Nullable String beanName, @Nullable PropertyV
 
 ![图7]({{"/assets/images/关于一次Spring中的@Value注解解析返回不正确的问题排查，以及查看Spring源码了解@Value的注入流程/图7.png" | absolute_url }})*图7*
 
-进入com.fangyou.v2.repo.config.MyAutowired.AutowiredFieldElement#inject，还是使用上面的一步步调用法则，最后发现在beanFactory.resolveDependency，value是解析错误的那个值，那就是这个方法了，所以进入该方法
+进入org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor.AutowiredFieldElement#inject，还是使用上面的一步步调用法则，最后发现在beanFactory.resolveDependency，value是解析错误的那个值，那就是这个方法了，所以进入该方法
 
 ```java
 @Override
-protected void inject(Object bean, String beanName, PropertyValues pvs) throws Throwable {
-    Field field = (Field) this.member;
-    Object value;
-    if (this.cached) {
-        value = resolvedCachedArgument(beanName, this.cachedFieldValue);
+protected void inject(Object bean, @Nullable String beanName, @Nullable PropertyValues pvs) throws Throwable {
+  Field field = (Field) this.member;
+  Object value;
+  if (this.cached) {
+    value = resolvedCachedArgument(beanName, this.cachedFieldValue);
+  }
+  else {
+    DependencyDescriptor desc = new DependencyDescriptor(field, this.required);
+    desc.setContainingClass(bean.getClass());
+    Set<String> autowiredBeanNames = new LinkedHashSet<>(1);
+    Assert.state(beanFactory != null, "No BeanFactory available");
+    TypeConverter typeConverter = beanFactory.getTypeConverter();
+    try {
+      // 进行@Value注解的解析
+      value = beanFactory.resolveDependency(desc, beanName, autowiredBeanNames, typeConverter);
     }
-    else {
-        DependencyDescriptor desc = new MyDependencyDescriptor(field, this.required);
-        desc.setContainingClass(bean.getClass());
-        Set<String> autowiredBeanNames = new LinkedHashSet<String>(1);
-        TypeConverter typeConverter = beanFactory.getTypeConverter();
-        try {
-            // 进行@Value注解的解析
-            value = beanFactory.resolveDependency(desc, beanName, autowiredBeanNames, typeConverter);
-        }
-        catch (BeansException ex) {
-            throw new UnsatisfiedDependencyException(null, beanName, new InjectionPoint(field), ex);
-        }
-        synchronized (this) {
-            if (!this.cached) {
-                if (value != null || this.required) {
-                    this.cachedFieldValue = desc;
-                    registerDependentBeans(beanName, autowiredBeanNames);
-                    if (autowiredBeanNames.size() == 1) {
-                        String autowiredBeanName = autowiredBeanNames.iterator().next();
-                        if (beanFactory.containsBean(autowiredBeanName)) {
-                            if (beanFactory.isTypeMatch(autowiredBeanName, field.getType())) {
-                                this.cachedFieldValue = new ShortcutDependencyDescriptor(
-                                        desc, autowiredBeanName, field.getType());
-                            }
-                        }
-                    }
-                }
-                else {
-                    this.cachedFieldValue = null;
-                }
-                this.cached = true;
+    catch (BeansException ex) {
+      throw new UnsatisfiedDependencyException(null, beanName, new InjectionPoint(field), ex);
+    }
+    synchronized (this) {
+      if (!this.cached) {
+        if (value != null || this.required) {
+          this.cachedFieldValue = desc;
+          registerDependentBeans(beanName, autowiredBeanNames);
+          if (autowiredBeanNames.size() == 1) {
+            String autowiredBeanName = autowiredBeanNames.iterator().next();
+            if (beanFactory.containsBean(autowiredBeanName) &&
+                beanFactory.isTypeMatch(autowiredBeanName, field.getType())) {
+              this.cachedFieldValue = new ShortcutDependencyDescriptor(
+                  desc, autowiredBeanName, field.getType());
             }
+          }
         }
+        else {
+          this.cachedFieldValue = null;
+        }
+        this.cached = true;
+      }
     }
-    if (value != null) {
-        ReflectionUtils.makeAccessible(field);
-        field.set(bean, value);
-    }
-}
+  }
+  if (value != null) {
+    ReflectionUtils.makeAccessible(field);
+    field.set(bean, value);
+  }
 }
 ```
 
@@ -948,7 +946,31 @@ public String resolveEmbeddedValue(@Nullable String value) {
 }
 ```
 
-往下走，发现这个Resolver是一个函数对象，跳转到了org.springframework.context.support.PropertySourcesPlaceholderConfigurer#processProperties(org.springframework.beans.factory.config.ConfigurableListableBeanFactory, org.springframework.core.env.ConfigurablePropertyResolver)里面去执行，那我们继续往下走，进入了org.springframework.core.env.AbstractPropertyResolver#resolveRequiredPlaceholders方法
+往下走，发现这个Resolver是一个函数对象，跳转到了org.springframework.context.support.PropertySourcesPlaceholderConfigurer#processProperties(org.springframework.beans.factory.config.ConfigurableListableBeanFactory, org.springframework.core.env.ConfigurablePropertyResolver)里面去执行，那我们继续往下走
+
+```java
+protected void processProperties(ConfigurableListableBeanFactory beanFactoryToProcess,
+			final ConfigurablePropertyResolver propertyResolver) throws BeansException {
+
+  propertyResolver.setPlaceholderPrefix(this.placeholderPrefix);
+  propertyResolver.setPlaceholderSuffix(this.placeholderSuffix);
+  propertyResolver.setValueSeparator(this.valueSeparator);
+
+  StringValueResolver valueResolver = strVal -> {
+    String resolved = (this.ignoreUnresolvablePlaceholders ?
+        propertyResolver.resolvePlaceholders(strVal) :
+        propertyResolver.resolveRequiredPlaceholders(strVal));
+    if (this.trimValues) {
+      resolved = resolved.trim();
+    }
+    return (resolved.equals(this.nullValue) ? null : resolved);
+  };
+
+  doProcessProperties(beanFactoryToProcess, valueResolver);
+}
+```
+
+进入函数代码块里面之后，代码执行了propertyResolver.resolveRequiredPlaceholders(strVal)); 进行解析，所以我们进入org.springframework.core.env.AbstractPropertyResolver#resolveRequiredPlaceholders方法
 
 ![图8]({{"/assets/images/关于一次Spring中的@Value注解解析返回不正确的问题排查，以及查看Spring源码了解@Value的注入流程/图8.png" | absolute_url }})*图8*
 
@@ -959,6 +981,23 @@ public String resolveRequiredPlaceholders(String text) throws IllegalArgumentExc
     this.strictHelper = createPlaceholderHelper(false);
   }
   return doResolvePlaceholders(text, this.strictHelper);
+}
+```
+
+从上面代码进入doResolvePlaceholders方法，org.springframework.core.env.AbstractPropertyResolver#doResolvePlaceholders
+
+```java
+private String doResolvePlaceholders(String text, PropertyPlaceholderHelper helper) {
+  return helper.replacePlaceholders(text, this::getPropertyAsRawString);
+}
+```
+
+继续往下org.springframework.util.PropertyPlaceholderHelper#replacePlaceholders(java.lang.String, org.springframework.util.PropertyPlaceholderHelper.PlaceholderResolver)
+
+```java
+public String replacePlaceholders(String value, PlaceholderResolver placeholderResolver) {
+  Assert.notNull(value, "'value' must not be null");
+  return parseStringValue(value, placeholderResolver, null);
 }
 ```
 
