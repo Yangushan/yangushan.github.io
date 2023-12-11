@@ -1193,6 +1193,10 @@ private String checkPropertyName(String name) {
 
 可以看到上面的代码了，是在里面做了一些特殊处理，会把.换成_, -也换成_，
 
+## 时序图
+
+![](https://raw.githubusercontent.com/Yangushan/images/main/blog/20231207/Spring%20%40Value%E6%B3%A8%E5%85%A5%E6%B5%81%E7%A8%8B.jpg)**关于spring的@value注入流程时序图**
+
 ## 结论
 
 可以从上面源码看出来，spring在加载@Value的时候，系统的权限顺序是大于本地application.yml的顺序的，然后当在环境变量中，这些特殊字符.,-都会变替换为_
@@ -1202,12 +1206,6 @@ private String checkPropertyName(String name) {
 如果不是遇到了，估计也不会在意这段代码
 
 spring的底层源码优雅且庞大，需要有些适应过程，不然找一段代码，确实只能使用一步步调试法，但是过程中也学习到了很多，就是第一次写源码分析还是有点混乱😂
-
-
-
-## 时序图
-
-![](https://raw.githubusercontent.com/Yangushan/images/main/blog/20231207/Spring%20%40Value%E6%B3%A8%E5%85%A5%E6%B5%81%E7%A8%8B.jpg)**关于spring的@value注入流程时序图**
 
 --------
 
