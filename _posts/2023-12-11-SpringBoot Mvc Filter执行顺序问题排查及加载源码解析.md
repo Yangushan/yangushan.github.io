@@ -1,5 +1,5 @@
 ---
-title: SpringBoot Mvc Filter执行顺序问题排查及加载源码解析
+title: SpringBoot MVC Filter执行顺序问题排查及加载源码解析
 date: 2023-12-11 16:03
 categories: [源码学习]
 tags: [java, spring, sprin源码学习]
@@ -7,7 +7,7 @@ pin: false
 image: https://raw.githubusercontent.com/Yangushan/images/main/blog/20231211/20231211161239.png
 ---
 
-> 这篇文章是记录一次关于SpringBoot中Mvc Filter没有按照我想要的顺序执行的问题排查，以及关于后续Filter加载顺序的源码解析
+> 这篇文章是记录一次关于SpringBoot中MVC Filter没有按照我想要的顺序执行的问题排查，以及关于后续Filter加载顺序的源码解析
 
 ## 前言
 
@@ -49,7 +49,7 @@ image: https://raw.githubusercontent.com/Yangushan/images/main/blog/20231211/202
 
 ![图6](https://raw.githubusercontent.com/Yangushan/images/main/blog/20231211/image-20231211154702494.png) *图6*
 
-从图6看出来只有2个方法调用了，我们进入这两个方法调用的地方，发现外面其实是一个方法调用org.apache.catalina.core.ApplicationFilterFactory#createFilterChain，这个方法就比较熟悉了，也就是我们在图1中，通过这个方法创建了filter chain，才有后续，所以这个方法就是我们要找的核心位置，从下图中可以看到其实是通过循环filterMaps，来添加filterConfig，那么我们往上查看这个filterMaps是什么
+从图6看出来只有2个地方调用了这个方法，我们进入这两个调用的地方，发现外面其实是同一个方法调用org.apache.catalina.core.ApplicationFilterFactory#createFilterChain，这个方法就比较熟悉了，也就是我们在*图1*中，通过这个方法创建了filter chain，才有后续，所以这个方法就是我们要找的地方，从下图中可以看到其实是通过循环filterMaps，来添加filterConfig，那么我们往上查看这个filterMaps是什么
 
 ![图7](https://raw.githubusercontent.com/Yangushan/images/main/blog/20231211/image-20231211154945304.png) *图7*
 
@@ -57,13 +57,13 @@ image: https://raw.githubusercontent.com/Yangushan/images/main/blog/20231211/202
 
 ![图8（图8和图7是一个方法，只是代码太多，分开截图，图8在图7上面一点）](https://raw.githubusercontent.com/Yangushan/images/main/blog/20231211/image-20231211155006372.png)
 
-*图8（图8和图7是一个方法，只是代码太多，分开截图，图8在图7上面一点）*
+*图8（图8和图7是一个方法，只是代码太多，分开截图，图8实际代码在图7代码上面一点）*
 
 方法比较简单，那么我们继续查看这个filterMaps
 
 ![图9](https://raw.githubusercontent.com/Yangushan/images/main/blog/20231211/image-20231211155136087.png) *图9*
 
-从spring的备注来看，这个filterMaps就是存放所有filter的地方，可以看到这个这个备注，是一个有序的map，那么我们要看filter的执行顺序和如何增加值，其实就是看这个filterMaps是如何插入的就可以了，我们继续查看这个filterMaps被插入的地方
+从spring mvc的备注来看，这个filterMaps就是存放所有filter的地方，可以看到这个这个备注，是一个有序的map，那么我们要看filter的执行顺序和如何增加我们的filter，其实就是看这个filterMaps是如何插入的就可以了，我们继续查看这个filterMaps被插入的地方
 
 ![图10](https://raw.githubusercontent.com/Yangushan/images/main/blog/20231211/image-20231211155155439.png) *图10*
 
@@ -77,9 +77,9 @@ image: https://raw.githubusercontent.com/Yangushan/images/main/blog/20231211/202
 
 ![图13](https://raw.githubusercontent.com/Yangushan/images/main/blog/20231211/image-20231211155243528.png) *图13（这个是图12里面filterMaps分别调用add和addBefore的源码)*
 
-由于图12的两个方法调用位置比较多，难以判断源码，所以我们采取打断点的方式来看，和我们相关位置是什么地方调用了这两个源码，重启项目
+由于图12的两个方法调用位置比较多，难以判断源码，所以我们采取打断点的方式来看，这段代码是什么地方调用了，重启项目
 
-## 启动注册filter流程
+## SpringMVC启动注册filter流程
 
 ![图14](https://raw.githubusercontent.com/Yangushan/images/main/blog/20231211/image-20231211155303174.png) *图14*
 
@@ -109,11 +109,11 @@ org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext#
 
 ![图20](https://raw.githubusercontent.com/Yangushan/images/main/blog/20231211/image-20231211155549430.png) *图20*
 
-可以看到其实上面一个方法是构造了一个`ServletContextInitializerBeans`对象，这个对象继承了`AbstractCollection`，所以其实是一个collection对象，其实从这个对象的备注也可以看出来，这个对象就是一个列表结构对象，里面包含了所有的servlet, filter等等，所以我们继续查看它的那个构造方法
+可以看到其实上面一个方法是构造了一个`ServletContextInitializerBeans`对象，这个对象继承了`AbstractCollection`，所以是一个collection对象，其实从这个对象的备注也可以看出来，这个对象就是一个列表结构对象，里面包含了所有的servlet, filter等等，所以我们继续查看它的那个构造方法
 
 ![图21](https://raw.githubusercontent.com/Yangushan/images/main/blog/20231211/image-20231211155603156.png) *图21*
 
-可以从构造方法里面看出来，里面就是在实例化一些东西，从图23可以知道这里面最重要的是sortedList，是一个排好序的`ServletContextInitializer`对象列表，所以我们只要观察这个对象就可以了，从构造方法看出来这个对象是用的`initializerTypes`去排序的，并且排序方式用的是`AnnotationAwareOrderComparator *INSTANCE*`
+从构造方法来看里面就是在实例化数据的，从*图23*可以知道这里面最重要的是sortedList，是一个排好序的`ServletContextInitializer`对象列表，所以我们只要观察这个对象就可以了，从构造方法看出来这个对象是用的`initializerTypes`去排序的，并且排序方式用的是`AnnotationAwareOrderComparator *INSTANCE*`
 
 ![图22](https://raw.githubusercontent.com/Yangushan/images/main/blog/20231211/image-20231211155613665.png) *图22*
 
@@ -123,7 +123,7 @@ org.springframework.boot.web.servlet.context.ServletWebServerApplicationContext#
 
 ![图24](https://raw.githubusercontent.com/Yangushan/images/main/blog/20231211/image-20231211155652898.png) *图24*
 
-我们继续回到图22的流程上，查看`initializerTypes`这个对象上，从源码看起来就是在这两段代码中，进行的设置，看不到其他的流程了，所以我们一个个对两个源码进行分析
+我们继续回到*图22*的流程上，查看`initializerTypes`这个对象上，从源码看起来就是在这两段代码中，进行的设置，看不到其他的流程了，所以我们一个个对两个源码进行分析
 
 ![图25](https://raw.githubusercontent.com/Yangushan/images/main/blog/20231211/image-20231211155701556.png) *图25*
 
@@ -153,7 +153,7 @@ jsonTypeInfoFilter和UserAuthFilter是我同事写的，而我自己写的CorsFi
 
 ![图32](https://raw.githubusercontent.com/Yangushan/images/main/blog/20231211/image-20231211155841013.png) *图32*
 
-回到图26的流程，看完`getOrderedBeansOfType`，返回一个bean list进行循环调用`addServletContextInitializerBean`方法，我们继续查看这个方法，可以看到下图，通过对不同的bean实力判断，我们计入filter的分支，然后通过调用`addServletContextInitializerBean`方法插入到`initializers`里面，这里这个方法就可以告一段落了。
+回到*图26*的流程，看完`getOrderedBeansOfType`，返回一个bean list进行循环调用`addServletContextInitializerBean`方法，我们继续查看这个方法，可以看到下图，通过对不同的bean实例判断，我们进入filter的分支，然后通过调用`addServletContextInitializerBean`方法插入到`initializers`里面，这里这个方法就可以告一段落了。
 
 ![图33](https://raw.githubusercontent.com/Yangushan/images/main/blog/20231211/image-20231211155853815.png) *图33*
 
@@ -161,7 +161,7 @@ jsonTypeInfoFilter和UserAuthFilter是我同事写的，而我自己写的CorsFi
 
 **由于上面的@WebFilter的order没有生效，所以我增加了@Component注解之后，再一次重启进行调试了，这里要注意**
 
-但是我们的CorsFilter还没设置进去，所以这个时候继续往刚刚图25的另外一个方法`addAdaptableBeans进去查看流程`，从这里的代码看出来，我们核心需要的应该是查看第三行，进入第三行断点，给filter.class的情况
+但是我们的CorsFilter还没设置进去，所以这个时候继续往刚刚*图25*的另外一个方法`addAdaptableBeans进去查看流程`，从这里的代码看出来，我们核心需要的应该是查看第三行，进入第三行断点，给filter.class的情况
 
 ![图35](https://raw.githubusercontent.com/Yangushan/images/main/blog/20231211/image-20231211155924787.png) *图35*
 
@@ -169,7 +169,7 @@ jsonTypeInfoFilter和UserAuthFilter是我同事写的，而我自己写的CorsFi
 
 ![图36](https://raw.githubusercontent.com/Yangushan/images/main/blog/20231211/image-20231211155934792.png) *图36*
 
-从下图查看堆栈信息，我们这里可以看到，这次给的type是interface jakarta.servlet.Filter，所以继承了filter接口的都被加载出来了，而且可以看到随着sort之后，也开始正常排序了，但是这里有一个问题了，userAuthFilter在上面那个interface被加载了一次，在这个方法filter interface也被加载了一次，也就是一个类其实创建了两个bean**（这也是为什么如果同时使用@Component和@WebFilter，这个时候不要设置WebFilter的filterName，因为这个filterName会被作为beanName，要么就起的不一样，否则启动会报错，会提示有两个重命名的bean），因为被创建了两个bean难道一个filter会被过滤两次吗？留着这个疑问继续往下走**
+从下图查看堆栈信息，我们这里可以看到，这次给的type是interface jakarta.servlet.Filter，所以继承了filter接口的都被加载出来了，而且可以看到随着sort之后，也开始正常排序了，但是这里有一个问题了，userAuthFilter在上面那个interface被加载了一次，在这个方法filter interface也被加载了一次，也就是一个类其实创建了两个bean**（这也是为什么如果同时使用@Component和@WebFilter，这个时候不要设置WebFilter的filterName，因为这个filterName会被作为beanName，要么就起的不一样，否则启动会报错，会提示有两个重命名的bean），但是filter被创建了两个bean难道一个filter会被过滤两次吗？留着这个疑问继续往下走**
 
 ![图37](https://raw.githubusercontent.com/Yangushan/images/main/blog/20231211/image-20231211155959417.png) *图37*
 
@@ -188,11 +188,12 @@ jsonTypeInfoFilter和UserAuthFilter是我同事写的，而我自己写的CorsFi
 ## 总结
 
 1. @WebFilter注解如果添加@Order注解并不会生效，这也是为什么我1比-1先执行的原因，因为根本没生效
-2. 使用@WebFilter注解的时候如果想要@Order注解生效，就要添加一下@Component注解，但是这会导致一个filter被两个interface注入，导致生成两个bean，最后被加入到filterMaps里面这个filter会被设置两次，次方案不赞成
+2. 使用@WebFilter注解的时候如果想要@Order注解生效，就要添加一下@Component注解，但是这会导致一个filter被两个interface注入，导致生成两个bean，最后被加入到filterMaps里面这个filter会被设置两次，次方案不赞成使用，因为一个filter在一次请求中会被调用两次
 3. @Order注解并不是对所有的类都生效，必须是spring都普通bean，比如@Component等等
 4. `FilterRegistrationBean`的顶层是interface org.springframework.boot.web.servlet.ServletContextInitializer，而不是interface jakarta.servlet.Filter
+5. @WebFilter最后被初始化到bean里面也会被识别为类interface org.springframework.boot.web.servlet.ServletContextInitializer，和`FilterRegistrationBean`是同一个
 
-可以看到这些源码跨越了tomcat, springboot, spring mvc, spring core等等，并且有些是在request请求的时候注入的，而有些又是在项目启动的时候注入的，如果排查一个底层源码问题，不熟悉确实就要像我一样可能需要花费1，2个小时才能查到源头，不过此次虽然是一个小BUG引起的，但是收获满满，至少对springmvc filter启动有了一个很不错的了解，等待下一篇继续了解@WebFilter的注册机制
+这些源码跨越了tomcat, springboot, spring mvc, spring core等等，并且有些是在request请求的时候注入的，而有些又是在项目启动的时候注入的，如果排查一个底层源码问题，不熟悉确实就要像我一样可能需要花费1，2个小时才能查到源头，不过此次虽然是一个小BUG引起的，但是收获满满，至少对springmvc filter启动有了一个很不错的了解，等待下一篇继续了解@WebFilter的注册机制
 
 --------
 
