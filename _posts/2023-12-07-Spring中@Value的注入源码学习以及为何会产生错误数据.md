@@ -2,9 +2,9 @@
 title: Spring中@Value的注入源码学习以及为何会产生错误数据
 date: 2023-12-07 15:31
 categories: [源码学习]
-tags: [java, spring, 源码学习]
+tags: [java, spring, sprin源码学习]
 pin: false
-image: /assets/images/关于一次Spring中的@Value注解解析返回不正确的问题排查，以及查看Spring源码了解@Value的注入流程/cover.jpeg
+image: https://raw.githubusercontent.com/Yangushan/images/main/blog/20231207/cover.jpeg
 ---
 
 > 这是关于一次Spring中的@Value注解解析返回不正确的问题排查，以及查看Spring源码了解@Value的注入流程
@@ -604,11 +604,11 @@ protected Object doCreateBean(String beanName, RootBeanDefinition mbd, @Nullable
 }
 ```
 
-![图1]({{"/assets/images/关于一次Spring中的@Value注解解析返回不正确的问题排查，以及查看Spring源码了解@Value的注入流程/图1.png" | absolute_url }})*图1*
+![图1](https://raw.githubusercontent.com/Yangushan/images/main/blog/20231207/图1.png)*图1*
 
 进入org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory#populateBean，由于这个方法也很长，所以我们依然使用上面一个方法来观察bean对象里面的Field是否被注入来判断到底是哪个方法调用中初始化了我们的field字段，慢慢调用之后排查到了InstantiationAwareBeanPostProcessor对象在其中一次执行的时候，field被初始化了，由于这个是一个for循环，所以我们还需要在for循环中具体观察是哪一次循环被初始化了，这里有一个特别说明，很多人在这个类中找不到bean对象，放在bw的rootObject里面，可以查看下图
 
-![图2]({{"/assets/images/关于一次Spring中的@Value注解解析返回不正确的问题排查，以及查看Spring源码了解@Value的注入流程/图2.png" | absolute_url }})*图2*
+![图2](https://raw.githubusercontent.com/Yangushan/images/main/blog/20231207/图2.png)*图2*
 
 ```java
 protected void populateBean(String beanName, RootBeanDefinition mbd, @Nullable BeanWrapper bw) {
@@ -695,13 +695,13 @@ protected void populateBean(String beanName, RootBeanDefinition mbd, @Nullable B
 
 for循环中出现了以下几个
 
-![图3]({{"/assets/images/关于一次Spring中的@Value注解解析返回不正确的问题排查，以及查看Spring源码了解@Value的注入流程/图3.png" | absolute_url }})*图3*
+![图3](https://raw.githubusercontent.com/Yangushan/images/main/blog/20231207/图3.png)*图3*
 
-![图4]({{"/assets/images/关于一次Spring中的@Value注解解析返回不正确的问题排查，以及查看Spring源码了解@Value的注入流程/图4.png" | absolute_url }})*图4*
+![图4](https://raw.githubusercontent.com/Yangushan/images/main/blog/20231207/图4.png)*图4*
 
-![图5]({{"/assets/images/关于一次Spring中的@Value注解解析返回不正确的问题排查，以及查看Spring源码了解@Value的注入流程/图5.png" | absolute_url }})*图5*
+![图5](https://raw.githubusercontent.com/Yangushan/images/main/blog/20231207/图5.png)*图5*
 
-![图6]({{"/assets/images/关于一次Spring中的@Value注解解析返回不正确的问题排查，以及查看Spring源码了解@Value的注入流程/图6.png" | absolute_url }})*图6*
+![图6](https://raw.githubusercontent.com/Yangushan/images/main/blog/20231207/图6.png)*图6*
 
 注意，当出现AutowiredAnnotationBeanPostProcessor的时候，执行`postProcessProperties`方法，这个时候再去观察bean，已经被执行了，所以我们可以知道是AutowiredAnnotationBeanPostProcessor的这个方法初始化了我们的field，我们进入AutowiredAnnotationBeanPostProcessor的这个方法`postProcessProperties`方法org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor#postProcessProperties
 
@@ -744,7 +744,7 @@ public void inject(Object target, @Nullable String beanName, @Nullable PropertyV
 
 在这里我们断点发现elementsToInterate这个会找到你bean中所有需要处理的field，进行循环单独处理，查看下图，由于我们不关心其他正确的field,我们只关心我们的那个field，所以循环到我们关心的field，进行element.inject方法查看
 
-![图7]({{"/assets/images/关于一次Spring中的@Value注解解析返回不正确的问题排查，以及查看Spring源码了解@Value的注入流程/图7.png" | absolute_url }})*图7*
+![图7](https://raw.githubusercontent.com/Yangushan/images/main/blog/20231207/图7.png)*图7*
 
 进入org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor.AutowiredFieldElement#inject，还是使用上面的一步步调用法则，最后发现在beanFactory.resolveDependency，value是解析错误的那个值，那就是这个方法了，所以进入该方法
 
@@ -972,7 +972,7 @@ protected void processProperties(ConfigurableListableBeanFactory beanFactoryToPr
 
 进入函数代码块里面之后，代码执行了propertyResolver.resolveRequiredPlaceholders(strVal)); 进行解析，所以我们进入org.springframework.core.env.AbstractPropertyResolver#resolveRequiredPlaceholders方法
 
-![图8]({{"/assets/images/关于一次Spring中的@Value注解解析返回不正确的问题排查，以及查看Spring源码了解@Value的注入流程/图8.png" | absolute_url }})*图8*
+![图8](https://raw.githubusercontent.com/Yangushan/images/main/blog/20231207/图8.png)*图8*
 
 ```java
 @Override
@@ -1072,7 +1072,7 @@ protected String parseStringValue(
 
 走到了org.springframework.core.env.PropertySourcesPropertyResolver#getProperty(java.lang.String, java.lang.Class<T>, boolean)方法，发现是从propertySources里面循环遍历，如果拿到value，则直接返回，所以这个propertySources的顺序很重要，看下面截图，在第一个environment就拿到了，所以进入environment里面进行查看
 
-![图9]({{"/assets/images/关于一次Spring中的@Value注解解析返回不正确的问题排查，以及查看Spring源码了解@Value的注入流程/图9.png" | absolute_url }})*图9*
+![图9](https://raw.githubusercontent.com/Yangushan/images/main/blog/20231207/%E5%9B%BE9.png)*图9*
 
 ```java
 @Nullable
@@ -1130,7 +1130,7 @@ protected <T> T getProperty(String key, Class<T> targetValueType, boolean resolv
 
 **看下面的代码也是和上面一层有点像，也是通过遍历，如果先拿到则直接返回，所以这个This.propertySources里面的顺序就很重要，我们可以从这里看到，configurationProperties的顺序是最重要的，接下来是以此判断servletConfigInitParams, servletContextInitParams, systemProperties, systemEnvironment, random，等等，后面才是我们的application.yml，所以系统的配置优先级高于本地配置，这是第一点，那么接下来由于我们是environment里面的逻辑不熟悉，所以我们可以循环到environment这里，进行查看，为什么会把_解析为.**
 
-![图10]({{"/assets/images/关于一次Spring中的@Value注解解析返回不正确的问题排查，以及查看Spring源码了解@Value的注入流程/图10.png" | absolute_url }})*图10*
+![图10](https://raw.githubusercontent.com/Yangushan/images/main/blog/20231207/图10.png)*图10*
 
 进入代码org.springframework.core.env.SystemEnvironmentPropertySource#getProperty，这个方法，我们看到会把我们的name转化为actualName，然后我们的trade.h5AppId就已经变为了trade_h5AppId，那么问题就在这个resolvePropertyName里面了
 
@@ -1147,7 +1147,7 @@ public Object getProperty(String name) {
 }
 ```
 
-![图11]({{"/assets/images/关于一次Spring中的@Value注解解析返回不正确的问题排查，以及查看Spring源码了解@Value的注入流程/图11.png" | absolute_url }})*图11*
+![图11](https://raw.githubusercontent.com/Yangushan/images/main/blog/20231207/图11.png)*图11*
 
 ```java
 protected final String resolvePropertyName(String name) {
@@ -1204,6 +1204,10 @@ private String checkPropertyName(String name) {
 spring的底层源码优雅且庞大，需要有些适应过程，不然找一段代码，确实只能使用一步步调试法，但是过程中也学习到了很多，就是第一次写源码分析还是有点混乱😂
 
 
+
+## 时序图
+
+![](https://raw.githubusercontent.com/Yangushan/images/main/blog/20231207/Spring%20%40Value%E6%B3%A8%E5%85%A5%E6%B5%81%E7%A8%8B.jpg)**关于spring的@value注入流程时序图**
 
 --------
 
