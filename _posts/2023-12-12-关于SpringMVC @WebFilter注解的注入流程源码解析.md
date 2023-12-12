@@ -9,11 +9,11 @@ image: https://raw.githubusercontent.com/Yangushan/images/main/blog/20231212/170
 
 > 这是一篇关于@WebFilter注解注入流程的解析，以及为什么@Order注解和@WebFilter无法搭配使用的解惑
 
-# 前言
+## 前言
 
 由于在上一篇中[《SpringBoot MVC Filter执行顺序问题排查及加载源码解析》](https://yangushan.github.io/2023/12/11/SpringBoot-Mvc-Filter%E6%89%A7%E8%A1%8C%E9%A1%BA%E5%BA%8F%E9%97%AE%E9%A2%98%E6%8E%92%E6%9F%A5%E5%8F%8A%E5%8A%A0%E8%BD%BD%E6%BA%90%E7%A0%81%E8%A7%A3%E6%9E%90.html)我们了解到了关于Filter的启动流程，但是发现了再使用@WebFilter到过程中，和@Order搭配使用的时候无法达到我们想要的效果，所以这篇就对@WebFilter注解进行一个分析，关于他的Spring注入流程还有为什么和@Order无法搭配的问题进行一个解惑
 
-# 源码思路
+## 源码思路
 
 从*图1*看到在@WebFilter的类上Spring的解释，没有看到什么关于@WebFilter注入的相关信息
 
@@ -35,7 +35,7 @@ image: https://raw.githubusercontent.com/Yangushan/images/main/blog/20231212/170
 
 回到*图4*里面有1个继承的方法，那应该就是这个继承的方法最重要了，我们看下继承方法上的Spring注解，可以看到这个方法就是在注入我们想要的对应的Bean，默认是一个空方法。所以我们在我们`ServletComponentScanRegistrar`上的这个方法上打上断点，来查看注入流程![图6](https://raw.githubusercontent.com/Yangushan/images/main/blog/20231212/CleanShot%202023-12-12%20at%2014.47.09%402x.png) *图6*
 
-# @WebFilter注入源码流程
+## @WebFilter注入源码流程
 
 启动项目打上断点之后，可以看到，首先拿到了你项目中所有休要扫描的包，我们项目只有一个；然后进行一个判断之后，进入了`addPostProcessor`方法，`org.springframework.boot.web.servlet.ServletComponentScanRegistrar#registerBeanDefinitions`
 
@@ -399,7 +399,7 @@ protected boolean isCandidateComponent(MetadataReader metadataReader) throws IOE
 
 ![图22](https://raw.githubusercontent.com/Yangushan/images/main/blog/20231212/CleanShot%202023-12-12%20at%2015.46.36%402x.png) *图22*
 
-# 总结
+## 总结
 
 1. @WebFilter的注入流程是使用了`ServletComponentRegisteringPostProcessor`的一个`BeanFactoryPostProcessor`后置处理器来加载bean的模式
 2. @WebFilter在注入的时候，最终是在`WebFilterHandler`被注入的BeanDifintion，而且是被设置为了`FilterRegistrationBean`，所以这也是为什么它会被识别为`org.springframework.boot.web.servlet.ServletContextInitializer`的原因
