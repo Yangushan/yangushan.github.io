@@ -2,7 +2,7 @@
 title: Spring中@Value的注入源码学习以及为何会产生错误数据
 date: 2023-12-07 15:31
 categories: [源码学习]
-tags: [java, spring, spring源码学习]
+tags: [Java, Spring, Spring源码解析]
 pin: false
 image: https://raw.githubusercontent.com/Yangushan/images/main/blog/20231207/cover.jpeg
 ---
@@ -11,7 +11,7 @@ image: https://raw.githubusercontent.com/Yangushan/images/main/blog/20231207/cov
 
 ## 问题的发生
 
-一次需求中，app需要我们接口返回一个配置，好让他们动态升级一些东西，这个需求很简单，我把这个东西配置在了application.yml里面，然后在程序中使用@Value注入这个内容，之后在接口中，返回这个对应的字段
+在一次需求中，app需要我们接口返回一个配置，好让他们动态升级一些东西，这个需求很简单，我把这个东西配置在了application.yml里面，然后在程序中使用@Value注入这个内容，之后在接口中，返回这个对应的字段
 
 ```yaml
 a:
