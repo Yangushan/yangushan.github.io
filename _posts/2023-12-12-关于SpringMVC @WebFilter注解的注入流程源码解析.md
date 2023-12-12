@@ -254,7 +254,7 @@ public interface BeanFactoryPostProcessor {
 
 ```
 
-这个类的文档很长，可以看到这个类的上面一大段的注视，主要讲的是`BeanFactoryPostProcessor`可以对我们的BeanDefinition进行属性修改的这么一个后置处理器，但是最后意思的是后面一段，他说
+这个类的文档很长，可以看到这个类的上面一大段的注视，主要讲的是`BeanFactoryPostProcessor`可以对我们的BeanDefinition进行属性修改的这么一个后置处理器，但是最有意思的是后面一段，他说
 
 > BeanFactoryPostProcessor beans that are autodetected in an ApplicationContext will be ordered according to org.springframework.core.PriorityOrdered and org.springframework.core.Ordered semantics. In contrast, BeanFactoryPostProcessor beans that are registered programmatically with a ConfigurableApplicationContext will be applied in the order of registration; any ordering semantics expressed through implementing the PriorityOrdered or Ordered interface will be ignored for programmatically registered post-processors. Furthermore, the @Order annotation is not taken into account for BeanFactoryPostProcessor beans.
 >
@@ -270,7 +270,7 @@ public interface BeanFactoryPostProcessor {
 
 ![图11](https://raw.githubusercontent.com/Yangushan/images/main/blog/20231212/CleanShot%202023-12-12%20at%2015.35.01%402x.png) *图11*
 
-我们继续往下走，走到了scanPackage方法，可以简单的看下这段逻辑，首先是通过findCandidateComponents拿到所有扫描到的BeanDefinition，然后对每个BeanDefinition进行一个HANDLES的处理，通过*图12*我们可以看出来HANDLERS是这个类写死的![图11](https://raw.githubusercontent.com/Yangushan/images/main/blog/20231212/CleanShot%202023-12-12%20at%2015.36.09%402x.png) *图11*
+我们继续往下走，走到了scanPackage方法，可以简单的看下这段逻辑，首先是通过findCandidateComponents拿到所有扫描到的BeanDefinition，然后对每个BeanDefinition进行一个HANDLE的处理，通过*图12*我们可以看出来HANDLERS是这个类写死的![图11](https://raw.githubusercontent.com/Yangushan/images/main/blog/20231212/CleanShot%202023-12-12%20at%2015.36.09%402x.png) *图11*
 
 ![图12](https://raw.githubusercontent.com/Yangushan/images/main/blog/20231212/CleanShot%202023-12-12%20at%2015.38.50%402x.png) *图12*
 
@@ -401,7 +401,7 @@ protected boolean isCandidateComponent(MetadataReader metadataReader) throws IOE
 
 ## 总结
 
-1. @WebFilter的注入流程是使用了`ServletComponentRegisteringPostProcessor`的一个`BeanFactoryPostProcessor`后置处理器来加载bean的模式
+1. @WebFilter的注入流程是使用了`ServletComponentRegisteringPostProcessor`它是一个继承了`BeanFactoryPostProcessor`的后置处理器
 2. @WebFilter在注入的时候，最终是在`WebFilterHandler`被注入的BeanDifintion，而且是被设置为了`FilterRegistrationBean`，所以这也是为什么它会被识别为`org.springframework.boot.web.servlet.ServletContextInitializer`的原因
 3. 由于经过`BeanFactoryPostProcessor`会被忽略任何和排序有关系的东西，只会按照类被加载到系统中的顺序来排序，所以这也是为什么@WebFilter无法使用@Order的原因
 
