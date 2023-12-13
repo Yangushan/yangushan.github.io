@@ -15,7 +15,7 @@ image: https://raw.githubusercontent.com/Yangushan/images/main/blog/20231212/170
 
 ## 源码思路
 
-从*图1*看到在@WebFilter的类上Spring的解释，没有看到什么关于@WebFilter注入的相关信息
+从*图1*看到在@WebFilter的类上Tomcat的解释`jakarta.servlet.annotation.WebFilter`，没有看到什么关于@WebFilter注入的相关信息
 
 ![CleanShot 2023-12-12 at 11.27.19@2x](https://raw.githubusercontent.com/Yangushan/images/main/blog/20231212/CleanShot%202023-12-12%20at%2011.27.19%402x.png) *图1*
 
@@ -399,15 +399,45 @@ protected boolean isCandidateComponent(MetadataReader metadataReader) throws IOE
 
 ![图22](https://raw.githubusercontent.com/Yangushan/images/main/blog/20231212/CleanShot%202023-12-12%20at%2015.46.36%402x.png) *图22*
 
+## 最后的尝试
+
+在前面我们看到由于`BeanFactoryPostProcessor`会直接拒绝@Order注入，但是似乎还是接口继承Ordered接口的模式，所以我们这里再次进行尝试，把代码改为继承`Ordered`接口的的方法看下，依旧还是没有生效，所以并不是因为`BeanFactoryPostProcessor`直接拒绝了@Order的注入这个原因，还是因为上面的一段逻辑，因为@WebFilter在创建`FilterRegistrationBean`对象作为Bean对象的时候，并没有设置order属性，这里才是真正的原因，看起来用@WebFilter注入的Filter是无法使用order排序的
+
+
+
 ## 总结
 
 1. @WebFilter的注入流程是使用了`ServletComponentRegisteringPostProcessor`它是一个继承了`BeanFactoryPostProcessor`的后置处理器
+
 2. @WebFilter在注入的时候，最终是在`WebFilterHandler`被注入的BeanDifintion，而且是被设置为了`FilterRegistrationBean`，所以这也是为什么它会被识别为`org.springframework.boot.web.servlet.ServletContextInitializer`的原因
-3. 由于经过`BeanFactoryPostProcessor`会被忽略任何和排序有关系的东西，只会按照类被加载到系统中的顺序来排序，所以这也是为什么@WebFilter无法使用@Order的原因
+
+3. 经过最后的尝试我们可以看出来@WebFilter无法使用@Order的真正原因，不是因为`BeanFactoryPostProcessor`的后置处理器导致的，而是因为在创建`BeanDefinition`的时候他们使用的`FilterRegistrationBean`并没有给他设置order属性，所以@WebFIlter这种注入Filter的模式是无法排序的，如果想要排序，可以使用下面两种方式：
+
+   1. 第一种，使用@Component的模式来实现一个普通的Filter，这个情况下是可以使用@Order注解的
+
+      ```java
+      @Component
+      @Order(1)
+      public class CorsFilter implements Filter {
+      ```
+
+   2. 通过注入@Bean，创建`FilterRegistrationBean`的模式
+
+      ```java
+      @Bean
+      public FilterRegistrationBean xxFilter() {
+          FilterRegistrationBean<Filter> registrationBean = new FilterRegistrationBean<>();
+          registrationBean.setFilter(new XxFilter());   //设置过滤器
+          registrationBean.setUrlPatterns(asList("/*"));
+          registrationBean.setOrder(2);  //设置优先级
+          return registrationBean;
+      }
+      ```
 
 
 
-关于这次Filter没有按照我想要的顺序执行的问题终于告一段落，不过又有了新的疑问，那么@Order又是如何生效的？并且为什么`BeanFactoryPostProcessor`会导致排序相关的无法生效呢？还有另外就是关于这个后置处理器又是如何运作的呢？@Import注解又是怎么注入的和Registrar相关流程，又出现了好多新的疑惑，慢慢来吧。
+
+关于这次Filter没有按照我想要的顺序执行的问题终于告一段落，不过又有了新的疑问，那么@Order又是如何生效的？并且为什么`BeanFactoryPostProcessor`会导致排序相关的无法生效呢？还有另外就是关于这个后置处理器又是如何运作的呢？@Import注解又是怎么注入的和Registrar相关流程，又出现了好多新的疑惑。
 
 --------
 
