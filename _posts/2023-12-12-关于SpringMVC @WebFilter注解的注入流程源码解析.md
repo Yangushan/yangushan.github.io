@@ -437,7 +437,7 @@ protected boolean isCandidateComponent(MetadataReader metadataReader) throws IOE
 
 
 
-关于这次Filter没有按照我想要的顺序执行的问题终于告一段落，不过又有了新的疑问，那么@Order又是如何生效的？并且为什么`BeanFactoryPostProcessor`会导致排序相关的无法生效呢？还有另外就是关于这个后置处理器又是如何运作的呢？@Import注解又是怎么注入的和Registrar相关流程，又出现了好多新的疑惑。
+关于这次Filter没有按照希望的顺序执行的问题终于告一段落，不过又有了新的疑问，@Order注解又是如何生效的？为什么`BeanFactoryPostProcessor`会导致@Order注解无法生效呢？还有另外就是关于`BeanFactoryPostProcessor`后置处理器又是如何运作的呢？@Import注解又是怎么注入的、Registrar又是怎么一个流程，又出现了好多新的疑惑啊～
 
 --------
 
