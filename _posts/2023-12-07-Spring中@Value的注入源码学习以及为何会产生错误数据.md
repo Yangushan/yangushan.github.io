@@ -4,7 +4,7 @@ date: 2023-12-07 15:31
 categories: [Spring源码学习]
 tags: [Java, Spring, 源码学习]
 pin: false
-image: https://raw.githubusercontent.com/Yangushan/images/main/blog/20231207/cover.jpeg
+image: https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231207/cover.jpeg
 ---
 
 > 这是关于一次Spring中的@Value注解解析返回不正确的问题排查，以及查看Spring源码了解@Value的注入流程
