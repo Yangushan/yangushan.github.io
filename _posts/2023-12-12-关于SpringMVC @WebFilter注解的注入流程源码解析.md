@@ -260,9 +260,9 @@ public interface BeanFactoryPostProcessor {
 >
 > 在ApplicationContext中自动检测到的BeanFactoryPostProcessor beans会根据优先级和顺序进行排序。而通过ConfigurableApplicationContext以编程方式注册的BeanFactoryPostProcessor beans则会按照它们被注册时的顺序应用。对于以编程方式注册的后处理器来说，无论是否实现了PriorityOrdered或Ordered接口定义的排序规则都会被忽略。另外，@Order注解也不适用于BeanFactoryPostProcessor beans。
 
-**似乎这就是我们@WebFilter为什么不兼容@Order的原因了，原来是藏在了这里。**
+**这里可以看到很有意思的一个内容，`BeanFactoryPostProcessor`的beans是不能使用@Order排序的，但是这个是针对`BeanFactoryPostProcessor`的beans而不是我们的类，不过算是一个小小的点**
 
-但是为什么会这样，我们还是通过代码分析的角度来看看原因吧。回到上面的 *图9* ，由于我们`BeanFactoryPostProcessor`接口只有一个方法，所以我们直接进入`ServletComponentRegisteringPostProcessor`的`postProcessBeanFactory`方法进行断点调试
+回到上面的 *图9* ，由于我们`BeanFactoryPostProcessor`接口只有一个方法，所以我们直接进入`ServletComponentRegisteringPostProcessor`的`postProcessBeanFactory`方法进行断点调试
 
 ![图10](https://raw.githubusercontent.com/Yangushan/images/main/blog/20231212/CleanShot%202023-12-12%20at%2015.33.38%402x.png) *图10*
 
@@ -399,19 +399,13 @@ protected boolean isCandidateComponent(MetadataReader metadataReader) throws IOE
 
 ![图22](https://raw.githubusercontent.com/Yangushan/images/main/blog/20231212/CleanShot%202023-12-12%20at%2015.46.36%402x.png) *图22*
 
-## 最后的尝试
-
-在前面我们看到由于`BeanFactoryPostProcessor`会直接拒绝@Order注入，但是似乎还是接口继承Ordered接口的模式，所以我们这里再次进行尝试，把代码改为继承`Ordered`接口的的方法看下，依旧还是没有生效，所以并不是因为`BeanFactoryPostProcessor`直接拒绝了@Order的注入这个原因，还是因为上面的一段逻辑，因为@WebFilter在创建`FilterRegistrationBean`对象作为Bean对象的时候，并没有设置order属性，这里才是真正的原因，看起来用@WebFilter注入的Filter是无法使用order排序的
-
-
-
 ## 总结
 
 1. @WebFilter的注入流程是使用了`ServletComponentRegisteringPostProcessor`它是一个继承了`BeanFactoryPostProcessor`的后置处理器
 
 2. @WebFilter在注入的时候，最终是在`WebFilterHandler`被注入的BeanDifintion，而且是被设置为了`FilterRegistrationBean`，所以这也是为什么它会被识别为`org.springframework.boot.web.servlet.ServletContextInitializer`的原因
 
-3. 经过最后的尝试我们可以看出来@WebFilter无法使用@Order的真正原因，不是因为`BeanFactoryPostProcessor`的后置处理器导致的，而是因为在创建`BeanDefinition`的时候他们使用的`FilterRegistrationBean`并没有给他设置order属性，所以@WebFIlter这种注入Filter的模式是无法排序的，如果想要排序，可以使用下面两种方式：
+3. 我们可以看出来@WebFilter无法使用@Order的真正原因，因为在创建`BeanDefinition`的时候他们使用的`FilterRegistrationBean`并没有给他设置order属性，所以@WebFIlter这种注入Filter的模式是无法排序的，如果想要排序，可以使用下面两种方式：
 
    1. 第一种，使用@Component的模式来实现一个普通的Filter，这个情况下是可以使用@Order注解的
 
@@ -437,7 +431,7 @@ protected boolean isCandidateComponent(MetadataReader metadataReader) throws IOE
 
 
 
-关于这次Filter没有按照希望的顺序执行的问题终于告一段落，不过又有了新的疑问，@Order注解又是如何生效的？为什么`BeanFactoryPostProcessor`会导致@Order注解无法生效呢？还有另外就是关于`BeanFactoryPostProcessor`后置处理器又是如何运作的呢？@Import注解又是怎么注入的、Registrar又是怎么一个流程，又出现了好多新的疑惑啊～
+关于这次Filter没有按照希望的顺序执行的问题终于告一段落，不过又有了新的疑问，关于`BeanFactoryPostProcessor`后置处理器是如何运作的？@Import注解又是怎么注入的、Registrar又是怎么一个流程，又出现了好多新的疑惑～
 
 --------
 
