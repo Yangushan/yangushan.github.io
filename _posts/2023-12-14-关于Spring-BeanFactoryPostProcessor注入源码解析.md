@@ -4,7 +4,7 @@ date: 2023-12-14 11:06
 categories: [Spring源码学习]
 tags: [Java, Spring, 源码学习]
 pin: false
-image: https://raw.githubusercontent.com/Yangushan/images/main/blog/20231214/OIG.jpeg
+image: https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231214/OIG.jpeg
 ---
 
 > 这是一篇关于BeanFactoryPostProcessor在Spring中的注入流程源码解析
