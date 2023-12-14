@@ -399,14 +399,14 @@ public static void invokeBeanFactoryPostProcessors(
 
 ## 总结
 
-1. BeanFactoryPostProcessor是一个可以用来后置修改我们BeanDefinition的钩子，在加载完所有BeanDefinition之后，会执行他的方法`postProcessBeanFactory`，并且是在bean初始化之前
+1. `BeanFactoryPostProcessor`是一个可以用来后置修改我们BeanDefinition的钩子，在加载完所有BeanDefinition之后，会执行他的方法`postProcessBeanFactory`，并且是在bean初始化之前
 2. `BeanFactoryPostProcessor`的bean支持排序，优先使用priority排序，然后再使用ordered接口排序，并不支持@Order排序
 3. 从上面源码我们还可以学习到，我们想要再Spring中注入我们自己的BeanDefinition可以通过`BeanDefinitionRegistryPostProcessor`这个钩子进行扩展
 4. 还有在调试过程中发现，我们普通的Bean的BeanDefinition都是通过`ConfigurationClassPostProcessor`这个`BeanDefinitionRegistryPostProcessor`加载出来的，下次可以进入这个类的`PostProcessBeanDefinitionRegistry`再次进行扩展学习
 
 
 
-这次的源码学习又有了额外的收获，不过又对其他代码产生了兴趣`PostProcessBeanDefinitionRegistry`是怎么加载到我们普通的Bean的BeanDefintion的😂。真的是代码看到哪里学习到哪里。
+这次的源码学习又有了额外的收获，不过又对其他代码产生了兴趣`ConfigurationClassPostProcessor`是怎么加载到我们普通的Bean的BeanDefintion的😂。真的是代码看到哪里学习到哪里。
 
 --------
 
