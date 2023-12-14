@@ -192,7 +192,7 @@ public class Test2BeanFactoryPostProcessor implements BeanFactoryPostProcessor, 
 
 我们断点进入这个方法，方法中的第一段代码，这个方法调用了另外一个方法给了两个参数，另外一个参数是通过调用其他方法获取的，我们要先看这个
 
-![图11](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231214/CleanShot%202023-12-14%20at%2014.34.54%402x.png) *图11
+![图11](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231214/CleanShot%202023-12-14%20at%2014.34.54%402x.png) *图11*
 
 进入`org.springframework.context.support.AbstractApplicationContext#getBeanFactoryPostProcessors`方法可以看到这个方法比较简单，就直接返回了，从 *图13*这个属性的备注来看，应该是用来存放所有BeanFactoryPostProcessor的，但是这个时候只返回了3个看起来像是Spring默认的PostProcessor还并没有我们自己的，所以我们继续往下走
 
