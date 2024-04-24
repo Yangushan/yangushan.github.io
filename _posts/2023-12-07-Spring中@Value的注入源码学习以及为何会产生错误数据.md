@@ -4,7 +4,7 @@ date: 2023-12-07 15:31
 categories: [Spring源码学习]
 tags: [Java, Spring, 源码学习]
 pin: false
-image: https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231207/cover.jpeg
+image: https://img.yangushan.xyz/2024/04/b75c1052fce40cac5707c1f8737f1e21.jpeg
 ---
 
 > 这是关于一次Spring中的@Value注解解析返回不正确的问题排查，以及查看Spring源码了解@Value的注入流程
@@ -604,7 +604,7 @@ protected Object doCreateBean(String beanName, RootBeanDefinition mbd, @Nullable
 }
 ```
 
-![图1](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231207/%E5%9B%BE1.png)*图1*
+![图1](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231207/图1.png)*图1*
 
 进入org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory#populateBean，由于这个方法也很长，所以我们依然使用上面一个方法来观察bean对象里面的Field是否被注入来判断到底是哪个方法调用中初始化了我们的field字段，慢慢调用之后排查到了InstantiationAwareBeanPostProcessor对象在其中一次执行的时候，field被初始化了，由于这个是一个for循环，所以我们还需要在for循环中具体观察是哪一次循环被初始化了，这里有一个特别说明，很多人在这个类中找不到bean对象，放在bw的rootObject里面，可以查看下图
 
