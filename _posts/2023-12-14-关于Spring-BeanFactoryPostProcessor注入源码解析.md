@@ -4,7 +4,7 @@ date: 2023-12-14 11:06
 categories: [Spring源码学习]
 tags: [Java, Spring, 源码学习]
 pin: false
-image: https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231214/OIG.jpeg
+image: https://img.yangushan.xyz/2024/04/c0ef92679362d03d115b614abfb903f0.jpeg
 ---
 
 > 这是一篇关于BeanFactoryPostProcessor在Spring中的注入流程源码解析
@@ -125,23 +125,23 @@ public interface BeanFactoryPostProcessor {
 
 ## 源码思路
 
-我们从`BeanFactoryPostProcessor`唯一的方法入手，看看调用方，发现只有一个地方调用了，其他地方都只是doc备注，所以进入唯一的那个方法![图1](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231214/CleanShot%202023-12-14%20at%2013.55.23%402x.png) *图1*
+我们从`BeanFactoryPostProcessor`唯一的方法入手，看看调用方，发现只有一个地方调用了，其他地方都只是doc备注，所以进入唯一的那个方法![图1](https://img.yangushan.xyz/2024/04/fff2c4cc260261c15aa5032dcfb91b9f.png) *图1*
 
-`org.springframework.context.support.PostProcessorRegistrationDelegate#invokeBeanFactoryPostProcessors(java.util.Collection<? extends org.springframework.beans.factory.config.BeanFactoryPostProcessor>, org.springframework.beans.factory.config.ConfigurableListableBeanFactory)`，这个方法很清晰，看起来就是拿到所有的`BeanFactoryPostProcessor`循环调用每一个的的`postProcessBeanFactory`方法，继续往上看，谁调用了这个方法![图2](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231214/CleanShot%202023-12-14%20at%2013.56.31%402x.png) *图2*
+`org.springframework.context.support.PostProcessorRegistrationDelegate#invokeBeanFactoryPostProcessors(java.util.Collection<? extends org.springframework.beans.factory.config.BeanFactoryPostProcessor>, org.springframework.beans.factory.config.ConfigurableListableBeanFactory)`，这个方法很清晰，看起来就是拿到所有的`BeanFactoryPostProcessor`循环调用每一个的的`postProcessBeanFactory`方法，继续往上看，谁调用了这个方法![图2](https://img.yangushan.xyz/2024/04/e65651ce6ee320a1217907c5bbc6cff5.png) *图2*
 
-发现最终只有一个方法中调用了这个方法`org.springframework.context.support.PostProcessorRegistrationDelegate#invokeBeanFactoryPostProcessors(org.springframework.beans.factory.config.ConfigurableListableBeanFactory, java.util.List<org.springframework.beans.factory.config.BeanFactoryPostProcessor>)`，其实还是在这个类里，是一个同名的重载方法，这个方法内容比较多，先找调用方![图3](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231214/CleanShot%202023-12-14%20at%2013.57.46%402x.png) *图3*
+发现最终只有一个方法中调用了这个方法`org.springframework.context.support.PostProcessorRegistrationDelegate#invokeBeanFactoryPostProcessors(org.springframework.beans.factory.config.ConfigurableListableBeanFactory, java.util.List<org.springframework.beans.factory.config.BeanFactoryPostProcessor>)`，其实还是在这个类里，是一个同名的重载方法，这个方法内容比较多，先找调用方![图3](https://img.yangushan.xyz/2024/04/36b0349665544bfdcdca01fe0bc368ad.png) *图3*
 
 继续往上找，走到了`org.springframework.context.support.PostProcessorRegistrationDelegate#invokeBeanFactoryPostProcessors(org.springframework.beans.factory.config.ConfigurableListableBeanFactory, java.util.List<org.springframework.beans.factory.config.BeanFactoryPostProcessor>)`
 
-![图4](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231214/CleanShot%202023-12-14%20at%2013.59.52%402x.png) *图4*
+![图4](https://img.yangushan.xyz/2024/04/3f834a06b30715f7abeb12ae049c827a.png) *图4*
 
-看到这个方法比较简单，就是直接调用我们 *图3* 的静态方法，然后给beanFactory设置一点属性，继续找这个方法被调用的地方![图5](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231214/CleanShot%202023-12-14%20at%2014.00.55%402x.png) *图5*
+看到这个方法比较简单，就是直接调用我们 *图3* 的静态方法，然后给beanFactory设置一点属性，继续找这个方法被调用的地方![图5](https://img.yangushan.xyz/2024/04/d9cf472ba04a9f0f44992957863e6f07.png) *图5*
 
-第一个类特别熟悉，我们从第一个类里面点进去查看，看到了熟悉的地方，在`org.springframework.context.support.AbstractApplicationContext#refresh`方法里面，也就是在启动Spring容器的方法里面，调用了这个方法。![图6](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231214/CleanShot%202023-12-14%20at%2014.03.16%402x.png) *图6*
+第一个类特别熟悉，我们从第一个类里面点进去查看，看到了熟悉的地方，在`org.springframework.context.support.AbstractApplicationContext#refresh`方法里面，也就是在启动Spring容器的方法里面，调用了这个方法。![图6](https://img.yangushan.xyz/2024/04/14bc3416bab55512d4bc41fb7df4fd4c.png) *图6*
 
 而从第二个点进去，这个方法并不熟悉，所以显然不是我们要的，那就直接看上面的refresh方法
 
-![图7](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231214/CleanShot%202023-12-14%20at%2014.05.02%402x.png) *图7*
+![图7](https://img.yangushan.xyz/2024/04/9b0b3ff35277fc0496ecdcf03ae523f9.png) *图7*
 
 ## 从refresh开始调试
 
@@ -176,15 +176,15 @@ public class Test2BeanFactoryPostProcessor implements BeanFactoryPostProcessor, 
 
 我创建了两个类，并且给他们继承了Ordered接口，Test1的顺序高于Test2加上了答应日志，如果按照Spring的流程来说，那么我们的Test1的日志应该会先打印。这里先放下这段代码，进行项目启动。
 
-由于refresh方法内容比较多，我们这次只关注在`BeanFactoryPostProcessor`这块，当refresh方法走到`postProcessBeanFactory`这个方法的时候，在singletonObjects（这个对象是存放Spring容器中的所有单例对象）里面已经有一些对象了，不过并没有我们的`BeanFactoryPostProcessor`对象，所以继续往下![图8](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231214/CleanShot%202023-12-14%20at%2014.18.13%402x.png) *图8*
+由于refresh方法内容比较多，我们这次只关注在`BeanFactoryPostProcessor`这块，当refresh方法走到`postProcessBeanFactory`这个方法的时候，在singletonObjects（这个对象是存放Spring容器中的所有单例对象）里面已经有一些对象了，不过并没有我们的`BeanFactoryPostProcessor`对象，所以继续往下![图8](https://img.yangushan.xyz/2024/04/6a53ed51710d033fdfabaf78556e60ab.png) *图8*
 
 当我们执行完`invokeBeanFactoryPostProcessors`方法的时候，我们发现了在beanDefinitionMap(存放所有BeanDefinition的一个map)里面已经把所有的BeanDefinition都加载完了。
 
-![图9](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231214/CleanShot%202023-12-14%20at%2014.26.41%402x.png) *图9*
+![图9](https://img.yangushan.xyz/2024/04/9b6802bec6af3c6429546d4b268760c1.png) *图9*
 
 并且在singletonObjects里面又多了一些对象，其中包括了我们上期中看到的`ServletComponentRegisteringPostProcessor`也就是我们的`BeanFactoryPostProcessor`的beans也是在这个类初始化的，所以我们核心就是要看`invokeBeanFactoryPostProcessors`方法了
 
-![图10](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231214/CleanShot%202023-12-14%20at%2014.27.49%402x.png) *图10*
+![图10](https://img.yangushan.xyz/2024/04/b94fd8d707b5310a4f7bc3355b32f41d.png) *图10*
 
 也就是说在这个方法中，创建了我们所有的BeanDefinition，并且初始化了我们的`BeanFactoryPostProcessor`的bean对象，还执行了他们所有的`postProcessBeanFactory`方法。
 
@@ -192,17 +192,17 @@ public class Test2BeanFactoryPostProcessor implements BeanFactoryPostProcessor, 
 
 我们断点进入这个方法，方法中的第一段代码，这个方法调用了另外一个方法给了两个参数，另外一个参数是通过调用其他方法获取的，我们要先看这个
 
-![图11](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231214/CleanShot%202023-12-14%20at%2014.34.54%402x.png) *图11*
+![图11](https://img.yangushan.xyz/2024/04/dacdc5f09fe33eb7d2a38d5f6629962b.png) *图11*
 
 进入`org.springframework.context.support.AbstractApplicationContext#getBeanFactoryPostProcessors`方法可以看到这个方法比较简单，就直接返回了，从 *图13*这个属性的备注来看，应该是用来存放所有BeanFactoryPostProcessor的，但是这个时候只返回了3个看起来像是Spring默认的PostProcessor还并没有我们自己的，所以我们继续往下走
 
-![图12](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231214/CleanShot%202023-12-14%20at%2014.38.06%402x.png) *图12*
+![图12](https://img.yangushan.xyz/2024/04/640b7fb5190d852bc01ad4c2e1303303.png) *图12*
 
-![图13](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231214/CleanShot%202023-12-14%20at%2014.38.53%402x.png) *图13*
+![图13](https://img.yangushan.xyz/2024/04/4cb80c2f5f791c736963dfa03b499884.png) *图13*
 
 回到 *图11*我们进入`org.springframework.context.support.PostProcessorRegistrationDelegate#invokeBeanFactoryPostProcessors(org.springframework.beans.factory.config.ConfigurableListableBeanFactory, java.util.List<org.springframework.beans.factory.config.BeanFactoryPostProcessor>)`方法，通过一步步调试，来观察我们的beanFactory里面的数据发现，当我们走完`invokeBeanDefinitionRegistryPostProcessors`方法之后，已经加载了我们的BeanDefinition了，不过观察singletonObjects我们的`BeanFactoryPostProcessor`还没被实例话，观察这方法的2个参数，registry从上面的代码看起来就是我们的`DefaultListableBeanFactory`，而另外一个currentRegistryProcessors list里面只有一个对象，就是`ConfigurationClassPostProcessor`是一个继承了接口`BeanDefinitionRegistryPostProcessor`的对象
 
-![图14](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231214/CleanShot%202023-12-14%20at%2014.49.43%402x.png) *图14*
+![图14](https://img.yangushan.xyz/2024/04/a5bd12db062385f12e4475134d38bc42.png) *图14*
 
 关于`BeanDefinitionRegistryPostProcessor`的描述，我们可以看到这个类的作用就是用来加载BeanDefinition的，所以我们的`ConfigurationClassPostProcessor`就是用来加载我们自己定义的那些常规的`BeanDefintion`
 
@@ -395,7 +395,7 @@ public static void invokeBeanFactoryPostProcessors(
 
 当我们走到最后的时候，看到和我们`BeanFactoryPostProcessor`相关的代码我们就了解了，为什么@Order注解无法生效，因为Spring这里压根没有处理@Order注解，把他们归为没有排序的那一类了，在分类的时候分为了3类list，最先执行`priorityOrderedPostProcessors`，看到这里竟然发现spring源码也有简单的一面啊。顺带一提beanFactory.getBean方法又是一个比较长的流程，后面重新开坑写一篇吧，这里就不多说了
 
-当我们走完Ordered接口的那个流程之后，我们前面写下的两个类的打印也顺利在控制台输出了![图15](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231214/CleanShot%202023-12-14%20at%2015.21.11%402x.png) *图15*
+当我们走完Ordered接口的那个流程之后，我们前面写下的两个类的打印也顺利在控制台输出了![图15](https://img.yangushan.xyz/2024/04/100799ed3d31ef07d37719aaa69a36f8.png) *图15*
 
 ## 总结
 

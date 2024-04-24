@@ -4,7 +4,7 @@ date: 2023-12-12 10:48
 categories: [Spring源码学习]
 tags: [Java, Spring, 源码学习]
 pin: false
-image: https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231212/1702370400268.jpg
+image: https://img.yangushan.xyz/2024/04/3b8b8a84379ab611abd5f33e7eabec25.jpeg
 ---
 
 > 这是一篇关于@WebFilter注解注入流程的解析，以及为什么@Order注解和@WebFilter无法搭配使用的解惑
@@ -17,33 +17,33 @@ image: https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231212/170237
 
 从*图1*看到在@WebFilter的类上Tomcat的解释`jakarta.servlet.annotation.WebFilter`，没有看到什么关于@WebFilter注入的相关信息
 
-![CleanShot 2023-12-12 at 11.27.19@2x](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231212/CleanShot%202023-12-12%20at%2011.27.19%402x.png) *图1*
+![CleanShot 2023-12-12 at 11.27.19@2x](https://img.yangushan.xyz/2024/04/a5b0663bddf6b84afeaf4803066004ae.png) *图1*
 
 那么我们只能从哪些类调用了这个注解来看是否有什么对应的思路，从这个类调用的地方可以看到有一个类上面对应的注解，Enables scanning for Servlet components，这个`ServletComponentScan`很像是我们需要的类
 
-![图2](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231212/CleanShot%202023-12-12%20at%2014.06.23%402x.png) *图2*
+![图2](https://img.yangushan.xyz/2024/04/3dc719ae22a72b10f89d8431e48fa769.png) *图2*
 
 我们进入这个注解进行查看，可以看到Spring关于这个注解的解释，这个类就是用来专门给@WebFilter, @WebServlet, @WebListener服务的，所以我们直接看@Import这个类就可以了`ServletComponentScanRegistrar`，*关于@Import注解的使用原理我们后面再写一篇文章来看看*
 
-![图3](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231212/CleanShot%202023-12-12%20at%2014.17.43%402x.png) *图3*
+![图3](https://img.yangushan.xyz/2024/04/96de7a03b03c09ed9e3c32eb9ffb67b8.png) *图3*
 
-我们进入`ServletComponentScanRegistrar`类，可以看到最上面Spring的备注，这个Registrar就是用于@ServletComponentScan注解的，这个类是继承与`ImportBeanDefinitionRegistrar`的，我们可以进入这个接口源码看下![图4](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231212/CleanShot%202023-12-12%20at%2014.42.44%402x.png) *图4*
+我们进入`ServletComponentScanRegistrar`类，可以看到最上面Spring的备注，这个Registrar就是用于@ServletComponentScan注解的，这个类是继承与`ImportBeanDefinitionRegistrar`的，我们可以进入这个接口源码看下![图4](https://img.yangushan.xyz/2024/04/5f31446f1e94c064d5ee03f1b6c23cbe.png) *图4*
 
 可以看到`ImportBeanDefinitionRegistrar`是用来注册一些你自己定义的Bean，*PS.关于`ImportBeanDefinitionRegistrar`后面也写一个解析原理看下*
 
-![图5](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231212/CleanShot%202023-12-12%20at%2014.44.35%402x.png) *图5*
+![图5](https://img.yangushan.xyz/2024/04/74ee6f21421a49adcdcd177d09327838.png) *图5*
 
-回到*图4*里面有1个继承的方法，那应该就是这个继承的方法最重要了，我们看下继承方法上的Spring注解，可以看到这个方法就是在注入我们想要的对应的Bean，默认是一个空方法。所以我们在我们`ServletComponentScanRegistrar`上的这个方法上打上断点，来查看注入流程![图6](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231212/CleanShot%202023-12-12%20at%2014.47.09%402x.png) *图6*
+回到*图4*里面有1个继承的方法，那应该就是这个继承的方法最重要了，我们看下继承方法上的Spring注解，可以看到这个方法就是在注入我们想要的对应的Bean，默认是一个空方法。所以我们在我们`ServletComponentScanRegistrar`上的这个方法上打上断点，来查看注入流程![图6](https://img.yangushan.xyz/2024/04/ae84cf70aee5f44dcebe8d7258fafdda.png) *图6*
 
 ## @WebFilter注入源码流程
 
 启动项目打上断点之后，可以看到，首先拿到了你项目中所有休要扫描的包，我们项目只有一个；然后进行一个判断之后，进入了`addPostProcessor`方法，`org.springframework.boot.web.servlet.ServletComponentScanRegistrar#registerBeanDefinitions`
 
-![图7](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231212/CleanShot%202023-12-12%20at%2014.51.45%402x.png) *图7*
+![图7](https://img.yangushan.xyz/2024/04/bbcd761929367c4700d4db8cad780c13.png) *图7*
 
 进入到`addPostProcessor`方法之后，可以看到创建了一个`ServletComponentRegisteringPostProcessorBeanDefinition`对象，而这个对象是当前类里面的一个内部对象，继承了一个`GenericBeanDefinition`，也就是一个`BeanDefinition`而已，然后就通过registry对象调用`registerBeanDefinition`方法，进入这个方法
 
-![图8](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231212/CleanShot%202023-12-12%20at%2014.55.09%402x.png) *图8*
+![图8](https://img.yangushan.xyz/2024/04/494dc6c0d8c26d6656247ddb086c724f.png) *图8*
 
 进入`org.springframework.beans.factory.support.DefaultListableBeanFactory#registerBeanDefinition`这个方法，beanName是在上面*图8*这个地方传进来的，是这个类写死的`servletComponentRegisteringPostProcessor`字符串，
 
@@ -171,7 +171,7 @@ public boolean isConfigurationFrozen() {
 
 从上面代码结束之后，可以看到我们*图7*的`addPostProcessor`方法就这样结束了，也就是其实这块代码唯一做的就是把beanName=servletComponentRegisteringPostProcessor的放入了 *beanDefinitionMap* 就这样结束了，这显然不可能是全部。所以我们把追踪的目标类放在了`servletComponentRegisteringPostProcessor`上面
 
-![图9](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231212/CleanShot%202023-12-12%20at%2015.14.00%402x.png) *图9*
+![图9](https://img.yangushan.xyz/2024/04/59f43b86dae3dee61787faae359bce27.png) *图9*
 
 找到`org.springframework.boot.web.servlet.ServletComponentRegisteringPostProcessor`这个类，我们看到spring的源码文档，可以看到这个PostProcessor的作用就是为了扫描到servlet下的所有components的，它是实现了`BeanFactoryPostProcessor`接口的，我们进去看看
 
@@ -264,19 +264,19 @@ public interface BeanFactoryPostProcessor {
 
 回到上面的 *图9* ，由于我们`BeanFactoryPostProcessor`接口只有一个方法，所以我们直接进入`ServletComponentRegisteringPostProcessor`的`postProcessBeanFactory`方法进行断点调试
 
-![图10](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231212/CleanShot%202023-12-12%20at%2015.33.38%402x.png) *图10*
+![图10](https://img.yangushan.xyz/2024/04/d3d4f54d6751e836778504584c25d98b.png) *图10*
 
 进入类中的`createComponentProvider`方法，从下图可以看出来，就是创建一个`ClassPathScanningCandidateComponentProvider`对象，进行一些属性设置
 
-![图11](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231212/CleanShot%202023-12-12%20at%2015.35.01%402x.png) *图11*
+![图11](https://img.yangushan.xyz/2024/04/79d42545a0637dd59c92dddca5ddd30c.png) *图11*
 
-我们继续往下走，走到了scanPackage方法，可以简单的看下这段逻辑，首先是通过findCandidateComponents拿到所有扫描到的BeanDefinition，然后对每个BeanDefinition进行一个HANDLE的处理，通过*图12*我们可以看出来HANDLERS是这个类写死的![图11](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231212/CleanShot%202023-12-12%20at%2015.36.09%402x.png) *图11*
+我们继续往下走，走到了scanPackage方法，可以简单的看下这段逻辑，首先是通过findCandidateComponents拿到所有扫描到的BeanDefinition，然后对每个BeanDefinition进行一个HANDLE的处理，通过*图12*我们可以看出来HANDLERS是这个类写死的![图11](https://img.yangushan.xyz/2024/04/bbf430afd45228b722f875b4dabadad3.png) *图11*
 
-![图12](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231212/CleanShot%202023-12-12%20at%2015.38.50%402x.png) *图12*
+![图12](https://img.yangushan.xyz/2024/04/907a7f5fe9c5eff2a936ed36131942bd.png) *图12*
 
 我们进入`org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider#findCandidateComponents`这个方法查看他们是怎么扫描到我们需要的class的，进入else方法
 
-![图13](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231212/CleanShot%202023-12-12%20at%2015.55.03%402x.png) *图13*
+![图13](https://img.yangushan.xyz/2024/04/1d6efee29655e5dcedbe3b107c726cc6.png) *图13*
 
 查看`org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider#scanCandidateComponents`方法
 
@@ -365,39 +365,39 @@ protected boolean isCandidateComponent(MetadataReader metadataReader) throws IOE
 }
 ```
 
-我们进入`isCandidateComponent`方法断点查看，可以看到在this.includeFilters里面有三个数据，也就是说，这些元信息会被我们三个Filter进行过滤，从名字可以看出来我们最关心的是`jakarta.servlet.annotation.WebFilter`这个，所以我们进入这个断点![图14](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231212/CleanShot%202023-12-12%20at%2016.02.06%402x.png) *图14*
+我们进入`isCandidateComponent`方法断点查看，可以看到在this.includeFilters里面有三个数据，也就是说，这些元信息会被我们三个Filter进行过滤，从名字可以看出来我们最关心的是`jakarta.servlet.annotation.WebFilter`这个，所以我们进入这个断点![图14](https://img.yangushan.xyz/2024/04/fe6cb69d63bcc5a5c06376a8ae95618d.png) *图14*
 
 往下进入了`org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider#isConditionMatch`方法，然后我们进入这个shouldSip看看源码
 
-![图15](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231212/CleanShot%202023-12-12%20at%2016.09.17%402x.png) *图15*
+![图15](https://img.yangushan.xyz/2024/04/a92d2545e192cc15ad403d3ca02a44ee.png) *图15*
 
 查看`org.springframework.context.annotation.ConditionEvaluator#shouldSkip(org.springframework.core.type.AnnotatedTypeMetadata, org.springframework.context.annotation.ConfigurationCondition.ConfigurationPhase)`源码，竟然在代码第一步就返回了false，也就是只要我们的类上面没有@Conditional注解，我们就会返回false
 
-![图16](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231212/CleanShot%202023-12-12%20at%2016.11.06%402x.png) *图16*
+![图16](https://img.yangushan.xyz/2024/04/d7ca7cbac2be3a1ee6202cb8a71e2399.png) *图16*
 
 由于 *图15* 会在判断前面增加!，所以其实返回的是True，也就是只要可以进入我们的handler判断，就会返回true。
 
-我们回到 *图14*的那个地方，我们进入match进去看看，handler是怎么判断是否match的，进入`org.springframework.core.type.filter.AbstractTypeHierarchyTraversingFilter#match(org.springframework.core.type.classreading.MetadataReader, org.springframework.core.type.classreading.MetadataReaderFactory)`这个方法，发现进入方法第一步，直接返回true了，所以进入这个matchSelf进行查看![图17](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231212/CleanShot%202023-12-12%20at%2016.15.01%402x.png) *图17*
+我们回到 *图14*的那个地方，我们进入match进去看看，handler是怎么判断是否match的，进入`org.springframework.core.type.filter.AbstractTypeHierarchyTraversingFilter#match(org.springframework.core.type.classreading.MetadataReader, org.springframework.core.type.classreading.MetadataReaderFactory)`这个方法，发现进入方法第一步，直接返回true了，所以进入这个matchSelf进行查看![图17](https://img.yangushan.xyz/2024/04/93d29e8f1dda7225f714f3f714399563.png) *图17*
 
 看到`org.springframework.core.type.filter.AnnotationTypeFilter#matchSelf`源码，我们可以看到这个下图，发现这个代码逻辑非常简单，其实就是判断每个bean对象是否有使用了某个注解，而使用了@WebFIlter的注解，所以这里就会返回true了
 
-![图18](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231212/CleanShot%202023-12-12%20at%2016.19.20%402x.png) *图18*
+![图18](https://img.yangushan.xyz/2024/04/fe107c519a41ba702578605488f68d80.png) *图18*
 
 所以最后在`org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider#scanCandidateComponents`方法，我们会返回的candidate很少，只有使用了@WebFilter的会被读取出来
 
-![图19](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231212/CleanShot%202023-12-12%20at%2016.22.54%402x.png) *图19*
+![图19](https://img.yangushan.xyz/2024/04/440d61ef86e90a17c0175088310d4852.png) *图19*
 
 所以这段代码中，我们进入我们想要的那个BeanDifintion继续往下走
 
-![图20](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231212/CleanShot%202023-12-12%20at%2015.42.38%402x.png) *图20*
+![图20](https://img.yangushan.xyz/2024/04/7fd230c228dcad2670c2125f8cffdc1b.png) *图20*
 
 第一次进入handler.handle的是WebServletHandler的handle方法，由于这几个Handler都是继承于`ServletComponentHandler`这个方法又是一个父类定义的方法，所以就进入了方法`org.springframework.boot.web.servlet.ServletComponentHandler#handle`中，经过判断什么事情都没做，因为我们的是一个Filter，所以可以看出来，应该是只有在`WebFilterHandler`的时候才会有所动作，我们继续往下走，果然当是`WebFilterHandler`的时候，进入了if判断里面，我们继续看下面的流程
 
-![图21](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231212/CleanShot%202023-12-12%20at%2015.45.48%402x.png) *图21*
+![图21](https://img.yangushan.xyz/2024/04/3af66fdccbbb89b1c907db0246deb563.png) *图21*
 
 `org.springframework.boot.web.servlet.WebFilterHandler#doHandle`进入源码，**当我们走到这里的时候就恍然大悟了，原来@WebFilter注解其实就是创建了一个`FilterRegistrationBean`对象作为Bean对象，这也是为什么我们在上篇文档中，在注入的时候@WebFilter会被识别为`org.springframework.boot.web.servlet.ServletContextInitializer`的原因，因为`FilterRegistrationBean`的顶层就是继承与这个接口的，并且可以看到了这里并没有设置order属性，这也是为什么它创建出来的Bean的order属性是默认值的原因了**
 
-![图22](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231212/CleanShot%202023-12-12%20at%2015.46.36%402x.png) *图22*
+![图22](https://img.yangushan.xyz/2024/04/7f6d1b78efb483f09aad7614e48584ca.png) *图22*
 
 ## 总结
 
