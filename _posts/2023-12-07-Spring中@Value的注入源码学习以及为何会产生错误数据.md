@@ -604,11 +604,11 @@ protected Object doCreateBean(String beanName, RootBeanDefinition mbd, @Nullable
 }
 ```
 
-![图1](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231207/图1.png)*图1*
+![图1](https://img.yangushan.xyz/2024/04/c0d7a14bd96b4cdcd9e2bea98ea05f73.png)*图1*
 
 进入org.springframework.beans.factory.support.AbstractAutowireCapableBeanFactory#populateBean，由于这个方法也很长，所以我们依然使用上面一个方法来观察bean对象里面的Field是否被注入来判断到底是哪个方法调用中初始化了我们的field字段，慢慢调用之后排查到了InstantiationAwareBeanPostProcessor对象在其中一次执行的时候，field被初始化了，由于这个是一个for循环，所以我们还需要在for循环中具体观察是哪一次循环被初始化了，这里有一个特别说明，很多人在这个类中找不到bean对象，放在bw的rootObject里面，可以查看下图
 
-![图2](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231207/%E5%9B%BE2.png)*图2*
+![图2](https://img.yangushan.xyz/2024/04/28978a6f50041eb9481d276253d48852.png)*图2*
 
 ```java
 protected void populateBean(String beanName, RootBeanDefinition mbd, @Nullable BeanWrapper bw) {
@@ -695,13 +695,13 @@ protected void populateBean(String beanName, RootBeanDefinition mbd, @Nullable B
 
 for循环中出现了以下几个
 
-![图3](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231207/%E5%9B%BE3.png)*图3*
+![图3](https://img.yangushan.xyz/2024/04/ad4b09331275aa49d1dbeca673725070.png)*图3*
 
-![图4](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231207/%E5%9B%BE4.png)*图4*
+![图4](https://img.yangushan.xyz/2024/04/9e3abcf95fbae2fdcaf82c9f39e4e263.png)*图4*
 
-![图5](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231207/%E5%9B%BE5.png)*图5*
+![图5](https://img.yangushan.xyz/2024/04/276e9e166e18761ee55ed61380fb6bac.png)*图5*
 
-![图6](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231207/%E5%9B%BE6.png)*图6*
+![图6](https://img.yangushan.xyz/2024/04/b2c649e196462eda36a00eeb9a906367.png)*图6*
 
 注意，当出现AutowiredAnnotationBeanPostProcessor的时候，执行`postProcessProperties`方法，这个时候再去观察bean，已经被执行了，所以我们可以知道是AutowiredAnnotationBeanPostProcessor的这个方法初始化了我们的field，我们进入AutowiredAnnotationBeanPostProcessor的这个方法`postProcessProperties`方法org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor#postProcessProperties
 
@@ -744,7 +744,7 @@ public void inject(Object target, @Nullable String beanName, @Nullable PropertyV
 
 在这里我们断点发现elementsToInterate这个会找到你bean中所有需要处理的field，进行循环单独处理，查看下图，由于我们不关心其他正确的field,我们只关心我们的那个field，所以循环到我们关心的field，进行element.inject方法查看
 
-![图7](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231207/%E5%9B%BE7.png)*图7*
+![图7](https://img.yangushan.xyz/2024/04/28922f5ffc1928c364bd192b5d2d991d.png)*图7*
 
 进入org.springframework.beans.factory.annotation.AutowiredAnnotationBeanPostProcessor.AutowiredFieldElement#inject，还是使用上面的一步步调用法则，最后发现在beanFactory.resolveDependency，value是解析错误的那个值，那就是这个方法了，所以进入该方法
 
@@ -972,7 +972,7 @@ protected void processProperties(ConfigurableListableBeanFactory beanFactoryToPr
 
 进入函数代码块里面之后，代码执行了propertyResolver.resolveRequiredPlaceholders(strVal)); 进行解析，所以我们进入org.springframework.core.env.AbstractPropertyResolver#resolveRequiredPlaceholders方法
 
-![图8](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231207/%E5%9B%BE8.png)*图8*
+![图8](https://img.yangushan.xyz/2024/04/512dd1b191d1f51d6f8412a37871b671.png)*图8*
 
 ```java
 @Override
@@ -1072,7 +1072,7 @@ protected String parseStringValue(
 
 走到了org.springframework.core.env.PropertySourcesPropertyResolver#getProperty(java.lang.String, java.lang.Class<T>, boolean)方法，发现是从propertySources里面循环遍历，如果拿到value，则直接返回，所以这个propertySources的顺序很重要，看下面截图，在第一个environment就拿到了，所以进入environment里面进行查看
 
-![图9](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231207/%E5%9B%BE9.png)*图9*
+![图9](https://img.yangushan.xyz/2024/04/80475182ff4979c2b6a812c809c5ccfc.png)*图9*
 
 ```java
 @Nullable
@@ -1130,7 +1130,7 @@ protected <T> T getProperty(String key, Class<T> targetValueType, boolean resolv
 
 **看下面的代码也是和上面一层有点像，也是通过遍历，如果先拿到则直接返回，所以这个This.propertySources里面的顺序就很重要，我们可以从这里看到，configurationProperties的顺序是最重要的，接下来是以此判断servletConfigInitParams, servletContextInitParams, systemProperties, systemEnvironment, random，等等，后面才是我们的application.yml，所以系统的配置优先级高于本地配置，这是第一点，那么接下来由于我们是environment里面的逻辑不熟悉，所以我们可以循环到environment这里，进行查看，为什么会把_解析为.**
 
-![图10](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231207/%E5%9B%BE10.png)*图10*
+![图10](https://img.yangushan.xyz/2024/04/67f3915836e80a0e124cb87cea174b2a.png)*图10*
 
 进入代码org.springframework.core.env.SystemEnvironmentPropertySource#getProperty，这个方法，我们看到会把我们的name转化为actualName，然后我们的trade.h5AppId就已经变为了trade_h5AppId，那么问题就在这个resolvePropertyName里面了
 
@@ -1147,7 +1147,7 @@ public Object getProperty(String name) {
 }
 ```
 
-![图11](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231207/%E5%9B%BE11.png)*图11*
+![图11](https://img.yangushan.xyz/2024/04/aec69ab2163f2e9c8dce94b885897203.png)*图11*
 
 ```java
 protected final String resolvePropertyName(String name) {
@@ -1195,7 +1195,7 @@ private String checkPropertyName(String name) {
 
 ## 时序图
 
-![](https://yangushan-image.oss-cn-shanghai.aliyuncs.com/blog/20231207/Spring%20%40Value%E6%B3%A8%E5%85%A5%E6%B5%81%E7%A8%8B.jpg)**关于spring的@value注入流程时序图**
+![](https://img.yangushan.xyz/2024/04/1cac5d25127e768e66cf2b7aeb2458c9.jpg)**关于spring的@value注入流程时序图**
 
 ## 结论
 
